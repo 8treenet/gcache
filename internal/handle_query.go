@@ -27,7 +27,9 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 		return
 	}
 	for index := 0; index < len(models); index++ {
-		objs = append(objs, models[index].Model)
+		if models[index].Model != nil {
+			objs = append(objs, models[index].Model)
+		}
 	}
 
 	if len(models) == len(primarys) {
@@ -69,8 +71,12 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 
 	rows := value.Elem()
 	var create *createHandle
-	if rows.Len() > 0 {
-		create = newCreateHandle(q.handle)
+	create = newCreateHandle(q.handle)
+	if rows.Len() == 0 && scope.opt.PenetrationSafe {
+		//防穿透，填入空数据
+		for index := 0; index < len(missPrimarys); index++{
+			create.CreateModel(scope.Table, missPrimarys[index], nil, scope.opt.Expires)
+		}
 	}
 
 	pkFieldName := scope.PrimaryFieldName()
@@ -102,9 +108,12 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 		e = err
 		return
 	}
-	create := newCreateHandle(q.handle)
-	if e = create.CreateSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.joinsCondition...); e != nil {
-		return
+
+	if len(rows) > 0 || scope.opt.PenetrationSafe {
+		create := newCreateHandle(q.handle)
+		if e = create.CreateSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.joinsCondition...); e != nil {
+			return
+		}
 	}
 	primarys = rows
 	return
@@ -127,9 +136,11 @@ func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
 		return
 	}
 
-	create := newCreateHandle(q.handle)
-	if e = create.CreateCountSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.joinsCondition...); e != nil {
-		return
+	if count > 0 || scope.opt.PenetrationSafe {
+		create := newCreateHandle(q.handle)
+		if e = create.CreateCountSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.joinsCondition...); e != nil {
+			return
+		}
 	}
 	return
 }

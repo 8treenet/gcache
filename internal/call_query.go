@@ -96,7 +96,6 @@ func (c *callQuery) byPrimary(es *easyScope) (ok bool, list []interface{}) {
 
 	list = models
 	ok = true
-	//c.setIndirectValue(es, models)
 	return
 }
 
@@ -135,7 +134,6 @@ func (c *callQuery) bySearch(es *easyScope) (ok bool, list []interface{}) {
 	ok = true
 	list = models
 	c.handle.RefreshEvent() <- es.valueType
-	//c.setIndirectValue(es, models)
 	return
 }
 

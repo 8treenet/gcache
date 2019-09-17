@@ -363,6 +363,30 @@ func TestSingleFlight(t *testing.T) {
 	time.Sleep(time.Second * 10)
 }
 
+
+/*
+	防穿透测试, 可注释和解注观察效果。
+	开启防穿透:查询数据库不存在的数据也会录入缓存
+*/
+func TestPenetration(t *testing.T) {
+	Two(func() {
+		var tcs []TestUser
+		var count int
+		db.Find(&tcs, []int{100, 200})
+		fmt.Println(tcs)
+
+		tcs =  []TestUser{}
+		db.Where("user_name = ?", "不存在").Find(&tcs).Count(&count)
+		fmt.Println(tcs, count)
+	})
+}
+
+//Cache 重写模型单独配置项
+func (te *TestUser) Cache(opt *option.ModelOption) {
+	//解注开启防穿透
+	//opt.PenetrationSafe = true
+}
+
 /*
 	手动删除
 */

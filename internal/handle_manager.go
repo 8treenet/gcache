@@ -15,13 +15,8 @@ const (
 	searchKey       = "%s_search_%s" //查询主键列表 key
 	affectKey       = "%s_affect_%s" //影响key
 	checkTimeoutSec = 1800
-	LevelDisable      = 0                           //禁止
-	LevelModel        = 1                           //只模型缓存
-	LevelSearch       = 2                           //查询缓存
 	dontInvalidSearch = "cache:dont_update_search"  //强制不失效
 	whereModelsSearch = "cache:where_models_search" //join和select查询
-	minExpires        = 30
-	maxExpires        = 900
 )
 
 
