@@ -8,6 +8,7 @@ import (
 	"github.com/8treenet/gcache/option"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"unsafe"
 
@@ -214,20 +215,20 @@ func (es *easyScope) whereSQL() (sql string) {
 		}
 	}
 
-	orSQL := strings.Join(orConditions, " OR ")
-	combinedSQL := strings.Join(andConditions, " AND ")
+	orSQL := strings.Join(orConditions, " | ")
+	combinedSQL := strings.Join(andConditions, " & ")
 	if len(combinedSQL) > 0 {
 		if len(orSQL) > 0 {
-			combinedSQL = combinedSQL + " OR " + orSQL
+			combinedSQL = combinedSQL + " | " + orSQL
 		}
 	} else {
 		combinedSQL = orSQL
 	}
 
 	if len(primaryConditions) > 0 {
-		sql = strings.Join(primaryConditions, " AND ")
+		sql = strings.Join(primaryConditions, " & ")
 		if len(combinedSQL) > 0 {
-			sql = sql + " AND (" + combinedSQL + ")"
+			sql = sql + " & (" + combinedSQL + ")"
 		}
 	} else if len(combinedSQL) > 0 {
 		sql = combinedSQL
@@ -297,9 +298,15 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 		}
 	case map[string]interface{}:
 		var sqls []string
-		for key, value := range value {
-			if value != nil {
-				sqls = append(sqls, fmt.Sprintf("(%v %s %v)", es.Quote(key), equalSQL, es.AddToVars(value)))
+		var keys []string
+		for key, _ := range value {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			v, ok := value[key]
+			if ok  {
+				sqls = append(sqls, fmt.Sprintf("(%v %s %v)", es.Quote(key), equalSQL, es.AddToVars(v)))
 			} else {
 				if !include {
 					sqls = append(sqls, fmt.Sprintf("(%v IS NOT NULL)", es.Quote(key)))
@@ -308,7 +315,7 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 				}
 			}
 		}
-		return strings.Join(sqls, " AND ")
+		return strings.Join(sqls, " & ")
 	case interface{}:
 		var sqls []string
 		newScope := es.New(value)
@@ -323,7 +330,7 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 				sqls = append(sqls, fmt.Sprintf("(%v.%v %s %v)", scopeQuotedTableName, es.Quote(field.DBName), equalSQL, es.AddToVars(field.Field.Interface())))
 			}
 		}
-		return strings.Join(sqls, " AND ")
+		return strings.Join(sqls, " & ")
 	default:
 		es.Err(fmt.Errorf("invalid query condition: %v", value))
 		return
@@ -569,8 +576,6 @@ var (
 	comparisonRegexp    = regexp.MustCompile("(?i) (=|<>|(>|<)(=?)|LIKE|IS|IN) ")
 	countingQueryRegexp = regexp.MustCompile("(?i)^count(.+)$")
 	replaceFormat       = map[string]string{
-		"and": "&",
-		"or":  "|",
 		" ":   "",
 		"`":   "",
 		"$$$": "$",
