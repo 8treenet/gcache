@@ -462,8 +462,8 @@ func (es *easyScope) EasyPrimarys() (primarys []interface{}, err error) {
 	value := reflect.MakeSlice(reflect.SliceOf(es.valueType), 0, 0)
 	value = reflect.New(value.Type())
 	newScope := es.sourceScope.DB().NewScope(value.Interface())
+	newScope.Search = es.sourceScope.Search
 	newScope.Search.Select(es.Table + "." + es.PrimaryKey())
-	newScope.Search.Limit(es.forgeSearch.limit)
 	query := newScope.DB().Callback().Query().Get("gorm:query")
 	query(newScope)
 	preload := newScope.DB().Callback().Query().Get("gorm:preload")

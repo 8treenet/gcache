@@ -101,9 +101,6 @@ func (c *callQuery) byPrimary(es *easyScope) (ok bool, list []interface{}) {
 
 func (c *callQuery) bySearch(es *easyScope) (ok bool, list []interface{}) {
 	ok = false
-	if es.forgeSearch.db == nil {
-		return
-	}
 
 	if es.opt.Level < option.LevelSearch || len(es.condition.PrimaryValue) > 0 || (len(es.condition.ObjectField) <= 0 && len(es.joinsModels) == 0) {
 		return

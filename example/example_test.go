@@ -119,7 +119,6 @@ func TestQueryRelated(t *testing.T) {
 /*
 	条件查询
 	1. where条件使用?, 查询条件和查询参数必须严格区分。
-	2. Find和First 内联查询，只支持主键，不支持条件。 gorm的作者写的有些不一样，hook不到。
 */
 func TestQueryWhere(t *testing.T) {
 	Two(func() {
@@ -151,9 +150,17 @@ func TestQueryWhere(t *testing.T) {
 		fmt.Println("where 6", tcs, count)
 		tcs = []TestUser{}
 
-		//不支持内联条件使用缓存
-		db.Find(&tc, "user_name = ?", "name_11")
-		fmt.Println("where 7", tc)
+		db.Find(&tcs, "user_name = ?", "name_11")
+		fmt.Println("where 7", tcs)
+		tcs = []TestUser{}
+
+		db.Find(&tcs, &TestUser{UserName: "name_11"})
+		fmt.Println("where 8", tcs)
+		tcs = []TestUser{}
+
+		db.First(&tc, "user_name =? and age = ?", "name_7", 27)
+		fmt.Println("where 9", tc)
+		tc = TestUser{}
 	})
 }
 
