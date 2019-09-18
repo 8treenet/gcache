@@ -2,14 +2,13 @@ package example_test
 
 import (
 	"fmt"
-	"math/rand"
-	"testing"
-	"time"
-
 	"github.com/8treenet/gcache"
 	"github.com/8treenet/gcache/option"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"math/rand"
+	"sync"
+	"testing"
 )
 
 var (
@@ -51,10 +50,11 @@ func init() {
 	opt.RedisPassword = ""           //redis 密码
 	opt.RedisDB = 0                  //redis 库
 
-	//缓存插件 注入到Gorm。开启Debug，查看日志
+	//缓存中间件 注入到Gorm
 	cachePlugin = gcache.InjectGorm(db, &opt)
 
 	InitData()
+	//开启Debug，查看日志
 	db.LogMode(true)
 	cachePlugin.Debug()
 }
@@ -356,8 +356,10 @@ func TestCreateInvalid(t *testing.T) {
 	防击穿测试
 */
 func TestSingleFlight(t *testing.T) {
-	for index := 0; index < 50; index++ {
+	wait := new(sync.WaitGroup)
+	for index := 0; index < 200; index++ {
 		go func() {
+			wait.Add(1)
 			var tcs []TestUser
 			db.Where([]int{1, 2}).Find(&tcs)
 			fmt.Println(tcs)
@@ -366,9 +368,10 @@ func TestSingleFlight(t *testing.T) {
 			tcs = []TestUser{}
 			cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
 			fmt.Println(tcs, count)
+			wait.Done()
 		}()
 	}
-	time.Sleep(time.Second * 10)
+	wait.Wait()
 }
 
 
