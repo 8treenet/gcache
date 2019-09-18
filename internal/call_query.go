@@ -130,7 +130,7 @@ func (c *callQuery) bySearch(es *easyScope) (ok bool, list []interface{}) {
 
 	ok = true
 	list = models
-	c.handle.RefreshEvent() <- es.valueType
+	c.handle.RefreshEvent(es.valueType)
 	return
 }
 

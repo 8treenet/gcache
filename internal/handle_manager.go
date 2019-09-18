@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -44,10 +45,10 @@ func newHandleManager(db *gorm.DB, cp *plugin) *Handle {
 	result.db = db
 	result.cp = cp
 	result.cleaner = make(map[reflect.Type]int64)
-	result.cleanerChan = make(chan reflect.Type, 2048)
 	if perr := rclient.Ping().Err(); perr != nil {
 		panic(perr)
 	}
+	rand.Seed(time.Now().UnixNano())
 	return result
 }
 
@@ -56,7 +57,7 @@ type Handle struct {
 	db          *gorm.DB
 	cp          *plugin
 	cleaner     map[reflect.Type]int64
-	cleanerChan chan reflect.Type
+	cleanerMutex     sync.Mutex
 	singleGroup Group
 	debug       bool
 }
@@ -109,8 +110,15 @@ func (h *Handle) JoinCountSecondKey(key string) string {
 	return "count:" + key
 }
 
-func (h *Handle) RefreshEvent() chan<- reflect.Type {
-	return h.cleanerChan
+func (h *Handle) RefreshEvent(t reflect.Type)  {
+	defer h.cleanerMutex.Unlock()
+	h.cleanerMutex.Lock()
+
+	_, ok := h.cleaner[t]
+	if !ok {
+		h.cleaner[t] = time.Now().Unix() + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
+	}
+	return
 }
 
 func (h *Handle) Debug(item ...interface{}) {
@@ -121,37 +129,22 @@ func (h *Handle) Debug(item ...interface{}) {
 }
 
 func (h *Handle) RefreshRun() {
-	rand.Seed(time.Now().UnixNano())
-	var outMS int64 = 0
 	for {
-		select {
-		case table := <-h.cleanerChan:
-			_, ok := h.cleaner[table]
-			if !ok {
-				h.cleaner[table] = time.Now().Unix() + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
-			}
-			continue
-
-		default:
-			outMS += 30
-			time.Sleep(30 * time.Millisecond)
-		}
-
 		//每10秒检查一次 cleaner map 是否该处理
-		if outMS > 10000 {
-			nowUnix := time.Now().Unix()
-			for table, updateUnix := range h.cleaner {
-				if updateUnix+checkTimeoutSec > nowUnix {
-					continue
-				}
-
-				// table
-				dh := h.NewDeleteHandle()
-				go dh.refresh(table)
-				h.cleaner[table] = nowUnix + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
+		time.Sleep(10 * time.Second)
+		nowUnix := time.Now().Unix()
+		h.cleanerMutex.Lock()
+		for table, updateUnix := range h.cleaner {
+			if updateUnix+checkTimeoutSec > nowUnix {
+				continue
 			}
-			outMS = 0
+
+			// table
+			dh := h.NewDeleteHandle()
+			go dh.refresh(table)
+			h.cleaner[table] = nowUnix + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
 		}
+		h.cleanerMutex.Unlock()
 	}
 }
 
