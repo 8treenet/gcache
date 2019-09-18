@@ -58,7 +58,6 @@ type Handle struct {
 	cp          *plugin
 	cleaner     map[reflect.Type]int64
 	cleanerMutex     sync.Mutex
-	singleGroup Group
 	debug       bool
 }
 

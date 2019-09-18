@@ -18,6 +18,7 @@ func newCallQuery(handle *Handle) *callQuery {
 
 type callQuery struct {
 	handle *Handle
+	singleGroup Group
 }
 
 // Bind
@@ -41,7 +42,7 @@ func (c *callQuery) invoke(scope *gorm.Scope) {
 		return
 	}
 
-	v, _, _ := c.handle.singleGroup.Do(easyScope.condition.SqlKey+easyScope.condition.SqlValue+fmt.Sprint(easyScope.condition.PrimaryValue), func() (i interface{}, e error) {
+	v, _, _ := c.singleGroup.Do(easyScope.condition.SqlKey+easyScope.condition.SqlValue+fmt.Sprint(easyScope.condition.PrimaryValue), func() (i interface{}, e error) {
 		var s singleQuery
 		if ok, list := c.byPrimary(easyScope); ok {
 			s.Models = list
