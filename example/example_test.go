@@ -53,10 +53,10 @@ func init() {
 
 	//缓存插件 注入到Gorm。开启Debug，查看日志
 	cachePlugin = gcache.InjectGorm(db, &opt)
-	cachePlugin.Debug()
 
 	InitData()
 	db.LogMode(true)
+	cachePlugin.Debug()
 }
 
 func InitData() {
@@ -266,7 +266,7 @@ func TestUpdateInvalid1(t *testing.T) {
 
 	for index := 0; index < len(tcs); index++ {
 		//触发缓存失效
-		db.Model(&tcs[index]).Update("age", tcs[index].Age-1)
+		db.Model(&tcs[index]).Updates(map[string]interface{}{"age":tcs[index].Age-1, "password":"1111"})
 	}
 }
 
