@@ -56,7 +56,7 @@ func (create *callCreate) afterInvoke(scope *gorm.Scope) {
 
 	writeRedis := func(delSearch bool) {
 		if delSearch {
-			create.handle.NewDeleteHandle().delSearchByScope(escope)
+			create.handle.NewDeleteHandle().DeleteSearchByScope(escope)
 		}
 	}
 

@@ -82,7 +82,7 @@ func (del *callDelete) afterInvoke(scope *gorm.Scope) {
 		delhandle := del.handle.NewDeleteHandle()
 		delhandle.delModle(escope.Table, primarys...)
 		if delSearch {
-			delhandle.delSearchByScope(escope)
+			delhandle.DeleteSearchByScope(escope)
 		}
 	}
 

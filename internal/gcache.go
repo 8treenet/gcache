@@ -39,7 +39,7 @@ func (cp *plugin) DeleteModel(model interface{}, primarys ...interface{}) error 
 // DeleteSearch
 func (cp *plugin) DeleteSearch(model interface{}) error {
 	scope := cp.db.NewScope(model)
-	return cp.handle.NewDeleteHandle().delSearchByScope(newEasyScope(scope, cp.handle))
+	return cp.handle.NewDeleteHandle().DeleteSearchByScope(newEasyScope(scope, cp.handle))
 }
 
 // DontSearchInvalid

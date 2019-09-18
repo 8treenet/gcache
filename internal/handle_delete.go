@@ -34,48 +34,35 @@ func (dh *deleteHandle) delModle(table string, primarys ...interface{}) error {
 	return e
 }
 
-func (dh *deleteHandle) delSearchByFields(table string, sfs []*gorm.StructField) error {
-	now := time.Now()
-	for index := 0; index < len(sfs); index++ {
-		var delTimeout []string
-		var delSearch []string
-		key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
-		m, err := dh.handle.redisClient.HGetAll(key).Result()
-		if err != nil {
-			continue
-		}
-
-		for searchKey, v := range m {
-			fieldUnix, fieldUnixE := strconv.Atoi(v)
-			if fieldUnixE == nil && now.Sub(time.Unix(int64(fieldUnix), 0)).Hours() > 48 {
-				delTimeout = append(delTimeout, searchKey)
-			}
-			delSearch = append(delSearch, searchKey)
-		}
-
-		if len(delSearch) > 0 {
-			err = dh.handle.redisClient.Del(delSearch...).Err()
-			dh.handle.Debug("Delete search cache Key :", delSearch, "error :", err)
-			if err != nil {
-				return err
-			}
-		}
-
-		if len(delTimeout) > 0 {
-			dh.handle.Debug("Delete affect cache Key :", delTimeout, "error :", err)
-			err = dh.handle.redisClient.HDel(key, delTimeout...).Err()
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
+	return  dh.DeleteLuaSearch(table, sfs)
+	//for index := 0; index < len(sfs); index++ {
+	//	var delSearch []string
+	//	var err error
+	//	key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
+	//
+	//	delSearch, err = dh.handle.redisClient.HKeys(key).Result()
+	//	if err != nil {
+	//		dh.handle.Debug(err)
+	//		continue
+	//	}
+	//	if len(delSearch) == 0 {
+	//		continue
+	//	}
+	//
+	//	err = dh.handle.redisClient.Del(delSearch...).Err()
+	//	dh.handle.Debug("Delete search cache Key :", delSearch, "error :", err)
+	//	if err != nil {
+	//		dh.handle.Debug(err)
+	//	}
+	//}
+	//return nil
 }
 
-func (dh *deleteHandle) delSearchByScope(scope *easyScope) error {
+func (dh *deleteHandle) DeleteSearchByScope(scope *easyScope) error {
 	table := scope.Table
 	sfs := scope.GetStructFields()
-	return dh.delSearchByFields(table, sfs)
+	return dh.DeleteSearch(table, sfs)
 }
 
 func (dh *deleteHandle) refresh(t reflect.Type) {
@@ -174,4 +161,28 @@ func (dh *deleteHandle) timeoutSearch(searchKey string, now time.Time) {
 	if len(batchKeys) > 0 {
 		process(batchKeys)
 	}
+}
+
+
+func (dh *deleteHandle) DeleteLuaSearch(table string, sfs []*gorm.StructField) error {
+	var keys []string
+	for index := 0; index < len(sfs); index++ {
+		key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
+		keys = append(keys, key)
+		dh.handle.Debug("Add script delete affect cache Key :", key)
+	}
+
+	script := redis.NewScript(`
+	for k,v in pairs(KEYS) do
+		local delKeys = redis.call("HKEYS", v)
+		for _, dv in pairs(delKeys) do
+			redis.call("DEL", dv)
+		end
+		redis.call("DEL", v)
+	end
+	return true
+`)
+	_, e := script.Run(dh.handle.redisClient, keys).Result()
+	dh.handle.Debug("Delete script execution, keys :", keys, "error :", e)
+	return e
 }

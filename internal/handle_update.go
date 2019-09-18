@@ -36,5 +36,5 @@ func (uh *updateHandle) UpdateSearch(scope *easyScope) {
 	}
 
 	//只删除影响字段的查询缓存
-	newDeleteHandle(uh.handle).delSearchByFields(scope.Table, invalidFilds)
+	newDeleteHandle(uh.handle).DeleteSearch(scope.Table, invalidFilds)
 }
