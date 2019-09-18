@@ -23,9 +23,8 @@ var modelValue string = `
 `
 
 func TestInitRefreshData(t *testing.T) {
-	cachePlugin := gettestcachePlugin()
-	FlushDB()
-	cp := cachePlugin.(*plugin)
+	cp := gettestcachePlugin()
+	cp.FlushDB()
 	cp.handle.redisClient.Set("test_emails_model_18", modelValue, 180*time.Second).Err()
 	var js JsonSearch
 	js.Primarys = append(js.Primarys, 18)
@@ -38,15 +37,14 @@ func TestInitRefreshData(t *testing.T) {
 }
 
 func TestRefresh(t *testing.T) {
-	cachePlugin := gettestcachePlugin()
-	Debug()
+	cp := gettestcachePlugin()
+	cp.Debug()
 
-	cp := cachePlugin.(*plugin)
 	dh := cp.handle.NewDeleteHandle()
 	dh.refresh(reflect.TypeOf(TestEmail{}))
 }
 
-func gettestcachePlugin() Plugin {
+func gettestcachePlugin() *plugin {
 	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
 	db, e := gorm.Open("mysql", addr)
 	if e != nil {
