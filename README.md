@@ -36,7 +36,7 @@ func init() {
 ```
 
 #### 约定
-- 不支持 Gruop
+- 不支持 Group
 - 不支持 Having
 - 查询条件和查询参数分离
 

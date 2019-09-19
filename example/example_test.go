@@ -422,7 +422,6 @@ func TestSkipCache(t *testing.T) {
 
 	cachePlugin.SkipCache().Delete(&tc)
 
-	//新增数据 触发缓存失效
 	email := &TestEmail{}
 	email.TypeID = 2101
 	email.TestUserID = 2234
