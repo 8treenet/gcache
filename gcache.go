@@ -19,6 +19,6 @@ type Plugin interface {
 	Debug()
 }
 
-func InjectGorm(db *gorm.DB, opt *option.DefaultOption) Plugin {
-	return internal.InjectGorm(db, opt)
+func InjectGorm(db *gorm.DB, opt *option.DefaultOption, redisOption *option.RedisOption) Plugin {
+	return internal.InjectGorm(db, opt,redisOption)
 }

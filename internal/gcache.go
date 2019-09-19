@@ -12,13 +12,13 @@ type plugin struct {
 	handle     *Handle
 }
 
-func InjectGorm(db *gorm.DB, opt *option.DefaultOption) *plugin {
+func InjectGorm(db *gorm.DB, opt *option.DefaultOption,redisOption *option.RedisOption) *plugin {
 	cp := new(plugin)
 	opt.Init()
 	cp.db = db
 	cp.defaultOpt = opt
 
-	handle := newHandleManager(db, cp)
+	handle := newHandleManager(db, cp, redisOption)
 	handle.registerCall()
 	go handle.RefreshRun()
 	cp.handle = handle

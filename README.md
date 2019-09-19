@@ -29,12 +29,9 @@ func init() {
     opt.Level = option.LevelSearch   //缓存级别，默认LevelSearch。LevelDisable:关闭缓存，LevelModel:模型缓存， LevelSearch:查询缓存
     opt.AsyncWrite = false           //异步缓存更新, 默认false。 insert update delete 成功后是否异步更新缓存
     opt.PenetrationSafe = false 	 //开启防穿透, 默认false。
-    opt.RedisAddr = "localhost:6379" //redis 地址
-    opt.RedisPassword = ""           //redis 密码
-    opt.RedisDB = 0                  //redis 库
     
     //缓存中间件 注入到Gorm。
-    gcache.InjectGorm(gormdb, &opt)
+    gcache.InjectGorm(gormdb, &opt, &option.RedisOption{Addr:"localhost:6379"})
 }
 ```
 

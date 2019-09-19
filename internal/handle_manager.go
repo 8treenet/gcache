@@ -2,12 +2,12 @@ package internal
 
 import (
 	"fmt"
+	"github.com/8treenet/gcache/option"
 	"math/rand"
 	"reflect"
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 )
 
@@ -21,39 +21,18 @@ const (
 )
 
 
-func newHandleManager(db *gorm.DB, cp *plugin) *Handle {
+func newHandleManager(db *gorm.DB, cp *plugin, redisOption *option.RedisOption) *Handle {
 	result := new(Handle)
-	rclient := redis.NewClient(&redis.Options{
-		Addr:     cp.defaultOpt.RedisAddr,
-		Password: cp.defaultOpt.RedisPassword,
-		DB:       cp.defaultOpt.RedisDB,
-		OnConnect: func(conn *redis.Conn) error {
-			return nil
-		},
-
-		//MaxRetries: 0,                       默认不重试
-		//PoolSize:  5, 					   连接池最大连接数 默认cpu * 10
-		//ReadTimeout : time.Duration 	       默认3秒
-		//WriteTimeout: time.Duration          默认3秒
-		//MinIdleConns: 0				       最小常驻空闲连接
-		//MaxConnAge : time.Duration           连接最长时间，默认永久
-		//IdleTimeout: time.Duration		   连接空闲时间 默认5分钟
-		//IdleCheckFrequency: time.Duration    保活，检测连接 默认1分钟
-		//PoolTimeout time.Duration            如果连接池已满 等待可用连接的时间默认 4
-	})
-	result.redisClient = rclient
+	result.redisClient = newRedisClient(redisOption)
 	result.db = db
 	result.cp = cp
 	result.cleaner = make(map[reflect.Type]int64)
-	if perr := rclient.Ping().Err(); perr != nil {
-		panic(perr)
-	}
 	rand.Seed(time.Now().UnixNano())
 	return result
 }
 
 type Handle struct {
-	redisClient *redis.Client
+	redisClient RedisClient
 	db          *gorm.DB
 	cp          *plugin
 	cleaner     map[reflect.Type]int64
