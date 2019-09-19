@@ -8,11 +8,14 @@ import (
 )
 
 func newCreateHandle(ch *Handle) *createHandle {
-	return &createHandle{handle: ch}
+	create := &createHandle{handle: ch}
+	create.loadLua()
+	return create
 }
 
 type createHandle struct {
 	handle *Handle
+	setLuaSha string
 }
 
 // CreateModel
@@ -40,11 +43,11 @@ func (ch *createHandle) CreateCountSearch(table, key, field string, whereField [
 }
 
 // CreateSearch
-func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
-	ObjectField []string //使用的模型列
-	Table       string   //表名
-}) (e error) {
-	return ch.createLuaSearch(table, key, field, whereField, values,expiration,joins...)
+//func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
+//	ObjectField []string //使用的模型列
+//	Table       string   //表名
+//}) (e error) {
+	//return ch.createLuaSearch(table, key, field, whereField, values,expiration,joins...)
 	//now := time.Now().Unix()
 	//jsearch := &JsonSearch{UpdatedAt: now, Primarys: values}
 	//buff, e := json.Marshal(jsearch)
@@ -83,10 +86,10 @@ func (ch *createHandle) CreateSearch(table, key, field string, whereField []stri
 	//	}
 	//}
 	//return
-}
+//}
 
 // CreateSearch
-func (ch *createHandle) createLuaSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
+func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
 	ObjectField []string //使用的模型列
 	Table       string   //表名
 }) (e error) {
@@ -116,6 +119,14 @@ func (ch *createHandle) createLuaSearch(table, key, field string, whereField []s
 			ch.handle.Debug("Add script set affect cache key :", affectKey, "field :", searchKey, "value :", now, "error :", e)
 		}
 	}
+
+	_, e = ch.handle.redisClient.EvalSha(ch.setLuaSha, keys, argv...).Result()
+	ch.handle.Debug("Create script execution, keys :", keys, "value:", argv, "error :", e)
+	return e
+}
+
+
+func (ch *createHandle) loadLua() {
 	script := redis.NewScript(`
 	for k,v in pairs(KEYS) do
 		if k > 1 then
@@ -129,7 +140,9 @@ func (ch *createHandle) createLuaSearch(table, key, field string, whereField []s
 	end
 	return true
 `)
-	_, e = script.Run(ch.handle.redisClient, keys, argv...).Result()
-	ch.handle.Debug("Create script execution, keys :", keys, "value:", argv, "error :", e)
-	return e
+	sha, err := script.Load(ch.handle.redisClient).Result()
+	if err != nil {
+		panic(err)
+	}
+	ch.setLuaSha = sha
 }

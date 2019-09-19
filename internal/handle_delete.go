@@ -12,11 +12,14 @@ import (
 )
 
 func newDeleteHandle(handle *Handle) *deleteHandle {
-	return &deleteHandle{handle: handle}
+	dh := &deleteHandle{handle: handle}
+	dh.loadLua()
+	return dh
 }
 
 type deleteHandle struct {
 	handle *Handle
+	delLuaSha string
 }
 
 func (dh *deleteHandle) flushDB() error {
@@ -34,8 +37,7 @@ func (dh *deleteHandle) delModle(table string, primarys ...interface{}) error {
 	return e
 }
 
-func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
-	return  dh.DeleteLuaSearch(table, sfs)
+//func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
 	//for index := 0; index < len(sfs); index++ {
 	//	var delSearch []string
 	//	var err error
@@ -57,7 +59,7 @@ func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) erro
 	//	}
 	//}
 	//return nil
-}
+//}
 
 func (dh *deleteHandle) DeleteSearchByScope(scope *easyScope) error {
 	table := scope.Table
@@ -164,7 +166,7 @@ func (dh *deleteHandle) timeoutSearch(searchKey string, now time.Time) {
 }
 
 
-func (dh *deleteHandle) DeleteLuaSearch(table string, sfs []*gorm.StructField) error {
+func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
 	var keys []string
 	for index := 0; index < len(sfs); index++ {
 		key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
@@ -172,6 +174,12 @@ func (dh *deleteHandle) DeleteLuaSearch(table string, sfs []*gorm.StructField) e
 		dh.handle.Debug("Add script delete affect cache Key :", key)
 	}
 
+	_, e := dh.handle.redisClient.EvalSha(dh.delLuaSha, keys).Result()
+	dh.handle.Debug("Delete script execution, keys :", keys, "error :", e)
+	return e
+}
+
+func (dh *deleteHandle) loadLua() {
 	script := redis.NewScript(`
 	for k,v in pairs(KEYS) do
 		local delKeys = redis.call("HKEYS", v)
@@ -182,7 +190,9 @@ func (dh *deleteHandle) DeleteLuaSearch(table string, sfs []*gorm.StructField) e
 	end
 	return true
 `)
-	_, e := script.Run(dh.handle.redisClient, keys).Result()
-	dh.handle.Debug("Delete script execution, keys :", keys, "error :", e)
-	return e
+	sha, err := script.Load(dh.handle.redisClient).Result()
+	if err != nil {
+		panic(err)
+	}
+	dh.delLuaSha = sha
 }
