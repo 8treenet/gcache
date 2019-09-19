@@ -27,7 +27,7 @@ func (del *callDelete) Bind() {
 // beforeInvoke
 func (del *callDelete) beforeInvoke(scope *gorm.Scope) {
 	easyScope := newEasyScope(scope, del.handle)
-	if easyScope.opt.Level == option.LevelDisable {
+	if _, ok := easyScope.DB().Get(skipCache); ok || easyScope.opt.Level == option.LevelDisable {
 		return
 	}
 	var primarys []interface{}
@@ -73,8 +73,7 @@ func (del *callDelete) afterInvoke(scope *gorm.Scope) {
 	}
 
 	ds := true
-	// 强制不更新查询缓存 或 只开启模型缓存
-	if _, ok := scope.DB().Get(dontInvalidSearch); ok || escope.opt.Level == option.LevelModel {
+	if escope.opt.Level == option.LevelModel {
 		ds = false
 	}
 

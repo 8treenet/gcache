@@ -42,9 +42,9 @@ func (cp *plugin) DeleteSearch(model interface{}) error {
 	return cp.handle.NewDeleteHandle().DeleteSearchByScope(newEasyScope(scope, cp.handle))
 }
 
-// DontSearchInvalid
-func (cp *plugin) DontSearchInvalid() *gorm.DB {
-	return cp.db.New().InstantSet(dontInvalidSearch, true)
+// SkipCache
+func (cp *plugin) SkipCache() *gorm.DB {
+	return cp.db.New().InstantSet(skipCache, true)
 }
 
 // UseModels

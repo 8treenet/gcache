@@ -409,3 +409,22 @@ func TestPlugin(t *testing.T) {
 	//删库
 	cachePlugin.FlushDB()
 }
+
+/*
+	增删查改 跳过缓存处理
+*/
+func TestSkipCache(t *testing.T) {
+	var tc TestUser
+	var ems []TestEmail
+	cachePlugin.SkipCache().First(&tc, 1).Related(&ems)
+
+	cachePlugin.SkipCache().Model(&tc).Update("age", tc.Age+1)
+
+	cachePlugin.SkipCache().Delete(&tc)
+
+	//新增数据 触发缓存失效
+	email := &TestEmail{}
+	email.TypeID = 2101
+	email.TestUserID = 2234
+	cachePlugin.SkipCache().Save(email)
+}

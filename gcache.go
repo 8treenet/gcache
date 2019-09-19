@@ -13,7 +13,8 @@ type Plugin interface {
 	DeleteModel(model interface{}, primarys ...interface{}) error
 	//删除查询缓存
 	DeleteSearch(model interface{}) error
-	DontSearchInvalid() *gorm.DB
+	//insert select update delete 都会跳过缓存处理
+	SkipCache() *gorm.DB
 	//join 和 子查询， 需要传入模型。
 	UseModels(...interface{}) *gorm.DB
 	Debug()

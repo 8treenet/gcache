@@ -16,7 +16,7 @@ const (
 	searchKey       = "%s_search_%s" //查询主键列表 key
 	affectKey       = "%s_affect_%s" //影响key
 	checkTimeoutSec = 1800
-	dontInvalidSearch = "cache:dont_update_search"  //强制不失效
+	skipCache = 		"cache:skip_cache" // 跳过缓存
 	whereModelsSearch = "cache:where_models_search" //join和select查询
 )
 

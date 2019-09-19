@@ -57,7 +57,7 @@ func (c *callRow) invoke(scope *gorm.Scope) {
 }
 
 func (c *callRow) pass(es *easyScope) bool {
-	if es.isJoinSkip() || es.forgeSearch.group != "" || es.forgeSearch.havingConditions != nil {
+	if _, ok := es.DB().Get(skipCache); ok || es.isJoinSkip() || es.forgeSearch.group != "" || es.forgeSearch.havingConditions != nil {
 		return true
 	}
 	if _, ok := es.sourceScope.InstanceGet("gorm:started_transaction"); ok {
