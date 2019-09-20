@@ -98,7 +98,7 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 	if e != nil {
 		return
 	}
-	if jsearch != nil && (jsearch.UpdatedAt+int64(scope.opt.Expires)) > time.Now().Unix() {
+	if jsearch != nil && jsearch.Timeout > time.Now().Unix() {
 		primarys = jsearch.Primarys
 		return
 	}
@@ -126,7 +126,7 @@ func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
 		return
 	}
 
-	if jsearch != nil && (jsearch.UpdatedAt+int64(scope.opt.Expires)) > time.Now().Unix() && len(jsearch.Primarys) > 0 {
+	if jsearch != nil && jsearch.Timeout > time.Now().Unix() && len(jsearch.Primarys) > 0 {
 		count, _ = strconv.Atoi(fmt.Sprint(jsearch.Primarys[0]))
 		return
 	}

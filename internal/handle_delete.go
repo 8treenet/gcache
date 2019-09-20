@@ -1,14 +1,10 @@
 package internal
 
 import (
-	"encoding/json"
 	"errors"
-	"reflect"
-	"strconv"
-	"time"
-
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 func newDeleteHandle(handle *Handle) *deleteHandle {
@@ -18,8 +14,10 @@ func newDeleteHandle(handle *Handle) *deleteHandle {
 }
 
 type deleteHandle struct {
-	handle *Handle
-	delLuaSha string
+	handle           *Handle
+	delSha           string
+	refreshAffectSha string
+	refreshSearchSha string
 }
 
 func (dh *deleteHandle) flushDB() error {
@@ -67,104 +65,16 @@ func (dh *deleteHandle) DeleteSearchByScope(scope *easyScope) error {
 	return dh.DeleteSearch(table, sfs)
 }
 
-func (dh *deleteHandle) refresh(t reflect.Type) {
-	value := reflect.New(t)
-	newScope := dh.handle.db.NewScope(value.Interface())
-	table := newScope.TableName()
-	sfs := newScope.GetStructFields()
-	now := time.Now()
-
-	for index := 0; index < len(sfs); index++ {
-		var delTimeout []string
-		var checkSearch []string
-		key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
-		m, err := dh.handle.redisClient.HGetAll(key).Result()
-		if err != nil {
-			continue
-		}
-
-		for searchKey, v := range m {
-			fieldUnix, fieldUnixE := strconv.Atoi(v)
-			if fieldUnixE == nil && now.Sub(time.Unix(int64(fieldUnix), 0)).Hours() > 48.0 {
-				delTimeout = append(delTimeout, searchKey)
-			}
-			checkSearch = append(checkSearch, searchKey)
-		}
-
-		if len(checkSearch) > 0 {
-			for index := 0; index < len(checkSearch); index++ {
-				dh.timeoutSearch(checkSearch[index], now)
-			}
-		}
-
-		if len(delTimeout) > 0 {
-			err = dh.handle.redisClient.HDel(key, delTimeout...).Err()
-			dh.handle.Debug("Delete affect cache Key :", delTimeout, "error :", err)
-			if err != nil {
-				return
-			}
-		}
+func (dh *deleteHandle) refresh(key string, search bool) {
+	if search {
+		_, e := dh.handle.redisClient.EvalSha(dh.refreshSearchSha, []string{key}, time.Now().Unix()).Result()
+		dh.handle.Debug("Refresh search script execution, keys :", key, "error :", e)
+		return
 	}
+
+	_, e := dh.handle.redisClient.EvalSha(dh.refreshAffectSha, []string{key}, time.Now().Unix()).Result()
+	dh.handle.Debug("Refresh affect script execution, keys :", key, "error :", e)
 }
-
-func (dh *deleteHandle) timeoutSearch(searchKey string, now time.Time) {
-	cursor := uint64(0)
-	var e error
-	var keys []string
-	var batchKeys []string
-
-	for index := 0; index < 20; index++ {
-		var list []string
-		list, cursor, e = dh.handle.redisClient.HScan(searchKey, cursor, "*", 500).Result()
-		keys = append(keys, list...)
-		if e != nil || cursor == 0 {
-			break
-		}
-	}
-
-	process := func(fields []string) {
-		var delfields []string
-		for index := 0; index < len(fields); index++ {
-			time.Sleep(10 * time.Millisecond)
-			value, e := dh.handle.redisClient.HGet(searchKey, fields[index]).Result()
-			if e == redis.Nil {
-				e = nil
-			}
-			if e != nil || value == "" {
-				continue
-			}
-
-			jsearch := new(JsonSearch)
-			if e = json.Unmarshal([]byte(value), jsearch); e != nil {
-				return
-			}
-
-			if now.Sub(time.Unix(int64(jsearch.UpdatedAt), 0)).Minutes() > 30.0 {
-				delfields = append(delfields, fields[index])
-			}
-		}
-
-		if len(delfields) <= 0 {
-			return
-		}
-
-		err := dh.handle.redisClient.HDel(searchKey, delfields...).Err()
-		dh.handle.Debug("Delete search cache Key :", searchKey, "field :", delfields, "error :", err)
-	}
-
-	for index := 0; index < len(keys); index++ {
-		batchKeys = append(batchKeys, keys[index])
-		if len(batchKeys) > 100 {
-			process(batchKeys)
-			batchKeys = []string{}
-		}
-	}
-
-	if len(batchKeys) > 0 {
-		process(batchKeys)
-	}
-}
-
 
 func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
 	var keys []string
@@ -174,7 +84,7 @@ func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) erro
 		dh.handle.Debug("Add script delete affect cache Key :", key)
 	}
 
-	_, e := dh.handle.redisClient.EvalSha(dh.delLuaSha, keys).Result()
+	_, e := dh.handle.redisClient.EvalSha(dh.delSha, keys).Result()
 	dh.handle.Debug("Delete script execution, keys :", keys, "error :", e)
 	return e
 }
@@ -194,5 +104,48 @@ func (dh *deleteHandle) loadLua() {
 	if err != nil {
 		panic(err)
 	}
-	dh.delLuaSha = sha
+	dh.delSha = sha
+
+	script = redis.NewScript(`
+	local all = redis.call("HGETALL", KEYS[1])
+	local key = ""
+	local timeout = tonumber(ARGV[1])
+	for k,v in pairs(all) do
+		if k % 2 == 1 then
+			key = v
+		else
+			local data = cjson.decode(v);
+			if tonumber(data["Timeout"]) < timeout then
+				redis.call("HDEL", KEYS[1], key)
+			end
+		end
+	end
+	return true
+`)
+	sha, err = script.Load(dh.handle.redisClient).Result()
+	if err != nil {
+		panic(err)
+	}
+	dh.refreshSearchSha = sha
+
+	script = redis.NewScript(`
+	local all = redis.call("HGETALL", KEYS[1])
+	local key = ""
+	local timeout = tonumber(ARGV[1])
+	for k,v in pairs(all) do
+		if k % 2 == 1 then
+			key = v
+		else
+			if tonumber(v) < timeout then
+				redis.call("HDEL", KEYS[1], key)
+			end
+		end
+	end
+	return true
+`)
+	sha, err = script.Load(dh.handle.redisClient).Result()
+	if err != nil {
+		panic(err)
+	}
+	dh.refreshAffectSha = sha
 }

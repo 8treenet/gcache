@@ -20,7 +20,7 @@ func InjectGorm(db *gorm.DB, opt *option.DefaultOption,redisOption *option.Redis
 
 	handle := newHandleManager(db, cp, redisOption)
 	handle.registerCall()
-	//go handle.RefreshRun()
+	go handle.RefreshRun()
 	cp.handle = handle
 	return cp
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/8treenet/gcache/option"
 	"math/rand"
-	"reflect"
 	"sync"
 	"time"
 
@@ -26,7 +25,10 @@ func newHandleManager(db *gorm.DB, cp *plugin, redisOption *option.RedisOption) 
 	result.redisClient = newRedisClient(redisOption)
 	result.db = db
 	result.cp = cp
-	result.cleaner = make(map[reflect.Type]int64)
+	result.cleaner = make(map[string]*struct{
+		unix int64
+		search bool
+	})
 	rand.Seed(time.Now().UnixNano())
 	return result
 }
@@ -35,7 +37,10 @@ type Handle struct {
 	redisClient RedisClient
 	db          *gorm.DB
 	cp          *plugin
-	cleaner     map[reflect.Type]int64
+	cleaner     map[string]*struct{
+		unix int64
+		search bool
+	}
 	cleanerMutex     sync.Mutex
 	debug       bool
 }
@@ -88,14 +93,19 @@ func (h *Handle) JoinCountSecondKey(key string) string {
 	return "count:" + key
 }
 
-func (h *Handle) RefreshEvent(t reflect.Type)  {
-	//defer h.cleanerMutex.Unlock()
-	//h.cleanerMutex.Lock()
-	//
-	//_, ok := h.cleaner[t]
-	//if !ok {
-	//	h.cleaner[t] = time.Now().Unix() + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
-	//}
+func (h *Handle) RefreshEvent(key string, search bool)  {
+	defer h.cleanerMutex.Unlock()
+	h.cleanerMutex.Lock()
+	_, ok := h.cleaner[key]
+	if !ok {
+		var item struct{
+			unix int64
+			search bool
+		}
+		item.search = search
+		item.unix = time.Now().Unix() + int64(checkTimeoutSec + rand.Intn(checkTimeoutSec))
+		h.cleaner[key] = &item
+	}
 	return
 }
 
@@ -108,19 +118,18 @@ func (h *Handle) Debug(item ...interface{}) {
 
 func (h *Handle) RefreshRun() {
 	for {
-		//每10秒检查一次 cleaner map 是否该处理
-		time.Sleep(10 * time.Second)
+		//每30秒检查一次 cleaner map 是否该处理
+		time.Sleep(30 * time.Second)
 		nowUnix := time.Now().Unix()
 		h.cleanerMutex.Lock()
-		for table, updateUnix := range h.cleaner {
-			if updateUnix+checkTimeoutSec > nowUnix {
+		for key, item := range h.cleaner {
+			if item.unix+checkTimeoutSec > nowUnix {
 				continue
 			}
 
-			// table
 			dh := h.NewDeleteHandle()
-			go dh.refresh(table)
-			h.cleaner[table] = nowUnix + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
+			go dh.refresh(key, item.search)
+			item.unix = nowUnix + int64(checkTimeoutSec + rand.Intn(checkTimeoutSec))
 		}
 		h.cleanerMutex.Unlock()
 	}
@@ -132,6 +141,6 @@ type JsonModel struct {
 }
 
 type JsonSearch struct {
-	UpdatedAt int64
-	Primarys  []interface{}
+	Timeout  int64
+	Primarys []interface{}
 }
