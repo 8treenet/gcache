@@ -171,11 +171,14 @@ func (c *callQuery) setIndirectValue(es *easyScope, models []interface{}) {
 			value = reflect.Append(value, model)
 		}
 		es.IndirectValue().Set(value)
+		return
 	} else if len(models) > 0{
 		model := reflect.ValueOf(models[0])
 		if model.Kind() == reflect.Ptr {
 			model = model.Elem()
 		}
 		es.IndirectValue().Set(model)
+		return
 	}
+	es.sourceScope.Err(gorm.ErrRecordNotFound)
 }
