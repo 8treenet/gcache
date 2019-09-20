@@ -89,13 +89,13 @@ func (h *Handle) JoinCountSecondKey(key string) string {
 }
 
 func (h *Handle) RefreshEvent(t reflect.Type)  {
-	defer h.cleanerMutex.Unlock()
-	h.cleanerMutex.Lock()
-
-	_, ok := h.cleaner[t]
-	if !ok {
-		h.cleaner[t] = time.Now().Unix() + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
-	}
+	//defer h.cleanerMutex.Unlock()
+	//h.cleanerMutex.Lock()
+	//
+	//_, ok := h.cleaner[t]
+	//if !ok {
+	//	h.cleaner[t] = time.Now().Unix() + checkTimeoutSec + rand.Int63n((int64(checkTimeoutSec / 2)))
+	//}
 	return
 }
 

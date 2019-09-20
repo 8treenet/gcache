@@ -45,18 +45,14 @@ func TestRefresh(t *testing.T) {
 }
 
 func gettestcachePlugin() *plugin {
-	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
+	addr := "root:123123@tcp(127.0.0.1:3306)/XXXXX?charset=utf8&parseTime=True&loc=Local"
 	db, e := gorm.Open("mysql", addr)
 	if e != nil {
 		panic(e)
 	}
 
 	opt := option.DefaultOption{}
-	opt.RedisAddr = "localhost:6379" //redis 地址
-	opt.RedisPassword = ""           //redis 密码
-	opt.RedisDB = 0                  //redis 库
-
 	//缓存插件 注入到Gorm。开启Debug，查看日志
-	cachePlugin := InjectGorm(db, &opt)
+	cachePlugin := InjectGorm(db, &opt, &option.RedisOption{Addr:"localhost:6379"})
 	return cachePlugin
 }

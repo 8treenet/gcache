@@ -104,7 +104,7 @@ func (ch *createHandle) CreateSearch(table, key, field string, whereField []stri
 
 	searchKey := ch.handle.JoinSearchKey(table, key)
 	keys = append(keys, searchKey)
-	argv = append(argv, field, string(buff), expiration, now)
+	argv = append(argv, field, string(buff), expiration, expiration + 3, now)
 	ch.handle.Debug("Add script set search cache key :", searchKey, "field :", field, "value :", string(buff), "error :", nil)
 
 	for index := 0; index < len(whereField); index++ {
@@ -131,10 +131,11 @@ func (ch *createHandle) loadLua() {
 	for k,v in pairs(KEYS) do
 		if k > 1 then
 			local x = k-1
-			redis.call("HSET", v, KEYS[1], ARGV[4])
+			redis.call("HSET", v, KEYS[1], ARGV[5])
 		else 
 			redis.call("HSET", v, ARGV[1], ARGV[2])
 			redis.call("EXPIRE", v, ARGV[3])
+			redis.call("EXPIRE", v, ARGV[4])
 		end
 
 	end
