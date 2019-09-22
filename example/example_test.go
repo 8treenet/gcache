@@ -48,7 +48,7 @@ func init() {
 	opt.PenetrationSafe = false 	 //开启防穿透, 默认false。
 
 	//缓存中间件 注入到Gorm
-	cachePlugin = gcache.InjectGorm(db, &opt, &option.RedisOption{Addr:"localhost:6379"})
+	cachePlugin = gcache.AttachDB(db, &opt, &option.RedisOption{Addr:"localhost:6379"})
 
 	InitData()
 	//开启Debug，查看日志
