@@ -1,7 +1,7 @@
 # gcache
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/8treenet/gcache/blob/master/LICENSE) [![Go Report Card](https://goreportcard.com/badge/github.com/8treenet/tcp)](https://goreportcard.com/report/github.com/8treenet/tcp) [![Build Status](https://travis-ci.org/8treenet/gotree.svg?branch=master)](https://travis-ci.org/8treenet/gotree) [![GoDoc](https://godoc.org/github.com/8treenet/gotree?status.svg)](https://godoc.org/github.com/8treenet/gotree) 
 
-###### gcache是gorm的中间件，注入后gorm即刻拥有缓存。
+###### gcache是gorm的中间件，插入后gorm即刻拥有缓存。
 
 ## Overview
 - 即插即用
