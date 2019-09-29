@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Plugin .
 type Plugin interface {
 	//清库
 	FlushDB() error
@@ -20,6 +21,7 @@ type Plugin interface {
 	Debug()
 }
 
+// AttachDB .
 func AttachDB(db *gorm.DB, opt *option.DefaultOption, redisOption *option.RedisOption) Plugin {
-	return internal.InjectGorm(db, opt,redisOption)
+	return internal.InjectGorm(db, opt, redisOption)
 }

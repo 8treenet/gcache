@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"github.com/8treenet/gcache/option"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
 	"unsafe"
+
+	"github.com/8treenet/gcache/option"
 
 	"github.com/jinzhu/gorm"
 )
@@ -41,9 +42,9 @@ type easyScope struct {
 	sourceScope *gorm.Scope
 	forgeSearch *search
 	condition   struct {
-		SqlKey        string        //sql查询语句
-		SqlValue      string        //sql查询值
-		SqlCountValue string        //sql查询值
+		SQLKey        string        //sql查询语句
+		SQLValue      string        //sql查询值
+		SQLCountValue string        //sql查询值
 		ObjectField   []string      //使用的模型列
 		PrimaryValue  []interface{} //主键查询值
 	}
@@ -61,9 +62,9 @@ type easyScope struct {
 }
 
 func (es *easyScope) QueryScope() *easyScope {
-	es.condition.SqlKey = es.combinedConditionSql()
-	es.condition.SqlKey = strings.ToLower(es.condition.SqlKey)
-	es.condition.SqlKey = strings.ReplaceAll(es.condition.SqlKey, "`deleted_at` is null", "")
+	es.condition.SQLKey = es.combinedConditionSql()
+	es.condition.SQLKey = strings.ToLower(es.condition.SQLKey)
+	es.condition.SQLKey = strings.ReplaceAll(es.condition.SQLKey, "`deleted_at` is null", "")
 	for _, field := range es.Fields() {
 		if field.IsPrimaryKey {
 			continue
@@ -73,7 +74,7 @@ func (es *easyScope) QueryScope() *easyScope {
 		if strings.ToLower(column) == "deleted_at" {
 			continue
 		}
-		if !strings.Contains(es.condition.SqlKey, column) {
+		if !strings.Contains(es.condition.SQLKey, column) {
 			continue
 		}
 
@@ -82,7 +83,7 @@ func (es *easyScope) QueryScope() *easyScope {
 	es.buildJoinsCondition()
 
 	for k, v := range replaceFormat {
-		es.condition.SqlKey = strings.ReplaceAll(es.condition.SqlKey, k, v)
+		es.condition.SQLKey = strings.ReplaceAll(es.condition.SQLKey, k, v)
 	}
 
 	vars := []string{}
@@ -90,10 +91,10 @@ func (es *easyScope) QueryScope() *easyScope {
 		vars = append(vars, fmt.Sprint(es.SQLVars[index]))
 	}
 
-	es.condition.SqlCountValue = strings.Join(vars, "_")
-	es.condition.SqlCountValue = strings.ReplaceAll(es.condition.SqlCountValue, " ", "_")
-	es.condition.SqlValue = strings.Join(vars, "_") + es.orderSQL() + es.limitAndOffsetSQL()
-	es.condition.SqlValue = strings.ReplaceAll(es.condition.SqlValue, " ", "_")
+	es.condition.SQLCountValue = strings.Join(vars, "_")
+	es.condition.SQLCountValue = strings.ReplaceAll(es.condition.SQLCountValue, " ", "_")
+	es.condition.SQLValue = strings.Join(vars, "_") + es.orderSQL() + es.limitAndOffsetSQL()
+	es.condition.SQLValue = strings.ReplaceAll(es.condition.SQLValue, " ", "_")
 	return es
 }
 
@@ -115,7 +116,7 @@ func (es *easyScope) buildJoinsCondition() {
 				continue
 			}
 
-			if strings.Contains(es.condition.SqlKey, column) || strings.Contains(es.condition.SqlKey, item.Table+"."+column) {
+			if strings.Contains(es.condition.SQLKey, column) || strings.Contains(es.condition.SQLKey, item.Table+"."+column) {
 				item.ObjectField = append(item.ObjectField, column)
 			}
 		}
@@ -132,7 +133,7 @@ func (es *easyScope) buildJoinsCondition() {
 		joinTable += fmt.Sprint(c["query"])
 	}
 	if joinTable != "" {
-		es.condition.SqlKey = es.condition.SqlKey + "joins_" + joinTable
+		es.condition.SQLKey = es.condition.SQLKey + "joins_" + joinTable
 	}
 }
 
@@ -305,7 +306,7 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 		sort.Strings(keys)
 		for _, key := range keys {
 			v, ok := value[key]
-			if ok  {
+			if ok {
 				sqls = append(sqls, fmt.Sprintf("(%v %s %v)", es.Quote(key), equalSQL, es.AddToVars(v)))
 			} else {
 				if !include {

@@ -6,34 +6,34 @@ import (
 )
 
 const (
-	LevelDisable      = 0                           //禁止
-	LevelModel        = 1                           //只缓存模型
-	LevelSearch       = 2                           //查询缓存
-	MinExpires        = 30
-	MaxExpires        = 900
+	LevelDisable = 0 //禁止
+	LevelModel   = 1 //只缓存模型
+	LevelSearch  = 2 //查询缓存
+	MinExpires   = 30
+	MaxExpires   = 900
 )
 
 var (
 	optMap map[reflect.Type]*ModelOption
 )
 
+// Opt .
 type Opt struct {
-	Expires    int  //默认60秒，30-900
-	Level      int  //默认LevelSearch，LevelDisable:关闭，LevelModel:模型缓存， LevelSearch:查询缓存
-	AsyncWrite bool //默认false， insert update delete 成功后是否异步更新缓存
+	Expires         int  //默认120秒，30-900
+	Level           int  //默认LevelSearch，LevelDisable:关闭，LevelModel:模型缓存， LevelSearch:查询缓存
+	AsyncWrite      bool //默认false， insert update delete 成功后是否异步更新缓存
 	PenetrationSafe bool //默认false, 开启防穿透。
 }
 
+// DefaultOption .
 type DefaultOption struct {
 	Opt
-	redis struct{
+	redis struct {
 		addr     string
 		password string
 		db       int
-		option	 *RedisOption
+		option   *RedisOption
 	}
-
-
 }
 
 type ModelOption struct {
@@ -45,7 +45,7 @@ func (defOpt *DefaultOption) Init() {
 		defOpt.Level = LevelSearch
 	}
 	if defOpt.Expires == 0 {
-		defOpt.Expires = 300
+		defOpt.Expires = 120
 	}
 	if defOpt.Expires < MinExpires {
 		panic("minExpires 30")
@@ -55,8 +55,9 @@ func (defOpt *DefaultOption) Init() {
 	}
 }
 
+// RedisOption .
 type RedisOption struct {
-	Addr     string
+	Addr string
 	// Optional password. Must match the password specified in the
 	// requirepass server configuration option.
 	Password string

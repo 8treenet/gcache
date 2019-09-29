@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	_ "github.com/8treenet/gcache/driver"
 	"github.com/8treenet/gcache/option"
 	"github.com/jinzhu/gorm"
@@ -19,8 +20,8 @@ func newCallRow(handle *Handle) *callRow {
 }
 
 type callRow struct {
-	driver *sql.DB
-	handle *Handle
+	driver      *sql.DB
+	handle      *Handle
 	singleGroup Group
 }
 
@@ -45,7 +46,7 @@ func (c *callRow) invoke(scope *gorm.Scope) {
 		return
 	}
 
-	count, e, _ := c.singleGroup.Do(easyScope.condition.SqlKey+easyScope.condition.SqlCountValue+fmt.Sprint(easyScope.condition.PrimaryValue), func() (interface{}, error) {
+	count, e, _ := c.singleGroup.Do(easyScope.condition.SQLKey+easyScope.condition.SQLCountValue+fmt.Sprint(easyScope.condition.PrimaryValue), func() (interface{}, error) {
 		return c.QueryCount(easyScope)
 	})
 

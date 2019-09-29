@@ -1,12 +1,13 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/8treenet/gcache/option"
 	"github.com/go-redis/redis"
-	"time"
 )
 
-
+// RedisClient .
 type RedisClient interface {
 	Eval(script string, keys []string, args ...interface{}) *redis.Cmd
 	EvalSha(sha1 string, keys []string, args ...interface{}) *redis.Cmd
@@ -26,18 +27,18 @@ type RedisClient interface {
 
 func newRedisClient(option *option.RedisOption) (result RedisClient) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     option.Addr,
-		Password: option.Password,
-		DB:       option.DB,
-		MaxRetries: option.MaxRetries,
-		PoolSize:  option.PoolSize,
-		ReadTimeout : option.ReadTimeout,
-		WriteTimeout: option.WriteTimeout,
-		MinIdleConns: option.MinIdleConns,
-		MaxConnAge : option.MaxConnAge,
-		IdleTimeout: option.IdleTimeout,
+		Addr:               option.Addr,
+		Password:           option.Password,
+		DB:                 option.DB,
+		MaxRetries:         option.MaxRetries,
+		PoolSize:           option.PoolSize,
+		ReadTimeout:        option.ReadTimeout,
+		WriteTimeout:       option.WriteTimeout,
+		MinIdleConns:       option.MinIdleConns,
+		MaxConnAge:         option.MaxConnAge,
+		IdleTimeout:        option.IdleTimeout,
 		IdleCheckFrequency: option.IdleCheckFrequency,
-		PoolTimeout: option.PoolTimeout,
+		PoolTimeout:        option.PoolTimeout,
 	})
 
 	if perr := client.Ping().Err(); perr != nil {

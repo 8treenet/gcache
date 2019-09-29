@@ -74,7 +74,7 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 	create = newCreateHandle(q.handle)
 	if rows.Len() == 0 && scope.opt.PenetrationSafe {
 		//防穿透，填入空数据
-		for index := 0; index < len(missPrimarys); index++{
+		for index := 0; index < len(missPrimarys); index++ {
 			create.CreateModel(scope.Table, missPrimarys[index], nil, scope.opt.Expires)
 		}
 	}
@@ -94,7 +94,7 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 
 // BySearch 通过条件查询主键列表
 func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e error) {
-	jsearch, e := q.getSearchPrimarys(scope.Table, scope.condition.SqlKey, scope.condition.SqlValue)
+	jsearch, e := q.getSearchPrimarys(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue)
 	if e != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 
 	if len(rows) > 0 || scope.opt.PenetrationSafe {
 		create := newCreateHandle(q.handle)
-		if e = create.CreateSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.joinsCondition...); e != nil {
+		if e = create.CreateSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.joinsCondition...); e != nil {
 			return
 		}
 	}
@@ -121,7 +121,7 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 
 //ByCount 通过条件查询count
 func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
-	jsearch, e := q.getSearchCount(scope.Table, scope.condition.SqlKey, scope.condition.SqlCountValue)
+	jsearch, e := q.getSearchCount(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue)
 	if e != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
 
 	if count > 0 || scope.opt.PenetrationSafe {
 		create := newCreateHandle(q.handle)
-		if e = create.CreateCountSearch(scope.Table, scope.condition.SqlKey, scope.condition.SqlCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.joinsCondition...); e != nil {
+		if e = create.CreateCountSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.joinsCondition...); e != nil {
 			return
 		}
 	}

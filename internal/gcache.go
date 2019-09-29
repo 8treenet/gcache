@@ -12,7 +12,8 @@ type plugin struct {
 	handle     *Handle
 }
 
-func InjectGorm(db *gorm.DB, opt *option.DefaultOption,redisOption *option.RedisOption) *plugin {
+// InjectGorm .
+func InjectGorm(db *gorm.DB, opt *option.DefaultOption, redisOption *option.RedisOption) *plugin {
 	cp := new(plugin)
 	opt.Init()
 	cp.db = db
