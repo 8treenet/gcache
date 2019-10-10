@@ -2,9 +2,11 @@ package internal
 
 import (
 	"errors"
+	"fmt"
+	"time"
+
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
-	"time"
 )
 
 func newDeleteHandle(handle *Handle) *deleteHandle {
@@ -16,6 +18,7 @@ func newDeleteHandle(handle *Handle) *deleteHandle {
 type deleteHandle struct {
 	handle           *Handle
 	delSha           string
+	delShardSha      string
 	refreshAffectSha string
 	refreshSearchSha string
 }
@@ -36,33 +39,33 @@ func (dh *deleteHandle) delModle(table string, primarys ...interface{}) error {
 }
 
 //func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
-	//for index := 0; index < len(sfs); index++ {
-	//	var delSearch []string
-	//	var err error
-	//	key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
-	//
-	//	delSearch, err = dh.handle.redisClient.HKeys(key).Result()
-	//	if err != nil {
-	//		dh.handle.Debug(err)
-	//		continue
-	//	}
-	//	if len(delSearch) == 0 {
-	//		continue
-	//	}
-	//
-	//	err = dh.handle.redisClient.Del(delSearch...).Err()
-	//	dh.handle.Debug("Delete search cache Key :", delSearch, "error :", err)
-	//	if err != nil {
-	//		dh.handle.Debug(err)
-	//	}
-	//}
-	//return nil
+//for index := 0; index < len(sfs); index++ {
+//	var delSearch []string
+//	var err error
+//	key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
+//
+//	delSearch, err = dh.handle.redisClient.HKeys(key).Result()
+//	if err != nil {
+//		dh.handle.Debug(err)
+//		continue
+//	}
+//	if len(delSearch) == 0 {
+//		continue
+//	}
+//
+//	err = dh.handle.redisClient.Del(delSearch...).Err()
+//	dh.handle.Debug("Delete search cache Key :", delSearch, "error :", err)
+//	if err != nil {
+//		dh.handle.Debug(err)
+//	}
+//}
+//return nil
 //}
 
 func (dh *deleteHandle) DeleteSearchByScope(scope *easyScope) error {
 	table := scope.Table
 	sfs := scope.GetStructFields()
-	return dh.DeleteSearch(table, sfs)
+	return dh.DeleteSearch(table, sfs, scope.shardingKeys)
 }
 
 func (dh *deleteHandle) refresh(key string, search bool) {
@@ -76,7 +79,7 @@ func (dh *deleteHandle) refresh(key string, search bool) {
 	dh.handle.Debug("Refresh affect script execution, keys :", key, "error :", e)
 }
 
-func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) error {
+func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField, shardingKey []interface{}) (e error) {
 	var keys []string
 	for index := 0; index < len(sfs); index++ {
 		key := dh.handle.JoinAffectKey(table, sfs[index].DBName)
@@ -84,7 +87,16 @@ func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField) erro
 		dh.handle.Debug("Add script delete affect cache Key :", key)
 	}
 
-	_, e := dh.handle.redisClient.EvalSha(dh.delSha, keys).Result()
+	if len(shardingKey) == 0 {
+		_, e = dh.handle.redisClient.EvalSha(dh.delSha, keys).Result()
+	} else {
+		sks := make([]interface{}, 0, len(shardingKey))
+		for index := 0; index < len(shardingKey); index++ {
+			sks = append(sks, fmt.Sprintf("_shard:%v", shardingKey[index]))
+		}
+		_, e = dh.handle.redisClient.EvalSha(dh.delShardSha, keys, sks...).Result()
+	}
+
 	dh.handle.Debug("Delete script execution, keys :", keys, "error :", e)
 	return e
 }
@@ -105,6 +117,26 @@ func (dh *deleteHandle) loadLua() {
 		panic(err)
 	}
 	dh.delSha = sha
+
+	script = redis.NewScript(`
+	for k,v in pairs(KEYS) do
+		local delKeys = redis.call("HKEYS", v)
+		for _, dv in pairs(delKeys) do
+			for _, shardKey in pairs(ARGV) do
+				if string.find(dv, shardKey) ~= nil then
+					redis.call("DEL", dv)
+					redis.call("HDEL", v, dv)
+				end
+			end
+		end
+	end
+	return true
+`)
+	sha, err = script.Load(dh.handle.redisClient).Result()
+	if err != nil {
+		panic(err)
+	}
+	dh.delShardSha = sha
 
 	script = redis.NewScript(`
 	local all = redis.call("HGETALL", KEYS[1])

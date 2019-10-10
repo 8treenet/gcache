@@ -34,7 +34,7 @@ type TestEmail struct {
 
 func init() {
 	var e error
-	addr := "root:123123@tcp(127.0.0.1:3306)/matrix?charset=utf8&parseTime=True&loc=Local"
+	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
 	db, e = gorm.Open("mysql", addr)
 	if e != nil {
 		panic(e)
@@ -349,6 +349,20 @@ func TestCreateInvalid(t *testing.T) {
 	email.TypeID = 1101
 	email.TestUserID = 1234
 	db.Save(email)
+}
+
+/*
+
+ */
+func TestSharding(t *testing.T) {
+	var tcs []TestUser
+	var count int
+	cachePlugin.CreateSharding(21).Where("age = ?", 21).Find(&tcs).Count(&count)
+	fmt.Println(tcs, count)
+	cachePlugin.CreateSharding(25).Where("age = ?", 25).Find(&tcs).Count(&count)
+	fmt.Println(tcs, count)
+
+	cachePlugin.CreateSharding(21).Where("age = ?", 21)
 }
 
 /*

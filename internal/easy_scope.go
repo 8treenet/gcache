@@ -34,6 +34,14 @@ func newEasyScope(s *gorm.Scope, h *Handle) *easyScope {
 			es.joinsModels = list
 		}
 	}
+
+	if shardingKeys, ok := s.Get(whereSharding); ok {
+		list, ok := shardingKeys.([]interface{})
+		if ok {
+			es.shardingKeys = list
+		}
+	}
+
 	return es
 }
 
@@ -59,6 +67,7 @@ type easyScope struct {
 
 	primaryFieldName string
 	handle           *Handle
+	shardingKeys     []interface{}
 }
 
 func (es *easyScope) QueryScope() *easyScope {

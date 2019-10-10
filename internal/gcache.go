@@ -66,6 +66,24 @@ func (cp *plugin) SetRelative(db *gorm.DB, models ...interface{}) *gorm.DB {
 	return db.InstantSet(whereModelsSearch, models)
 }
 
+// CreateSharding
+func (cp *plugin) CreateSharding(shardingKey ...interface{}) *gorm.DB {
+	if len(shardingKey) == 0 {
+		panic("ShardingKey empty")
+	}
+
+	return cp.db.New().InstantSet(whereSharding, shardingKey)
+}
+
+// SetSharding
+func (cp *plugin) SetSharding(db *gorm.DB, shardingKey ...interface{}) *gorm.DB {
+	if len(shardingKey) == 0 {
+		panic("ShardingKey empty")
+	}
+
+	return db.InstantSet(whereSharding, shardingKey)
+}
+
 // Debug
 func (cp *plugin) Debug() {
 	cp.handle.debug = true
