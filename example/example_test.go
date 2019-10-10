@@ -22,7 +22,7 @@ type TestUser struct {
 	UserName string `gorm:"size:32"`
 	Password string `gorm:"size:32"`
 	Age      int
-	status   int
+	Status   int
 }
 
 type TestEmail struct {
@@ -34,7 +34,7 @@ type TestEmail struct {
 
 func init() {
 	var e error
-	addr := "root:123123@tcp(127.0.0.1:3306)/matrix?charset=utf8&parseTime=True&loc=Local"
+	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
 	db, e = gorm.Open("mysql", addr)
 	if e != nil {
 		panic(e)
@@ -66,7 +66,7 @@ func InitData() {
 		user.UserName = fmt.Sprintf("%s_%d", "name", index)
 		user.Password = fmt.Sprintf("%s_%d", "password", index)
 		user.Age = 20 + index
-		user.status = rand.Intn(3)
+		user.Status = rand.Intn(3)
 		db.Save(user)
 
 		email := &TestEmail{}
@@ -349,6 +349,36 @@ func TestCreateInvalid(t *testing.T) {
 	email.TypeID = 1101
 	email.TestUserID = 1234
 	db.Save(email)
+}
+
+/*
+	Sharding测试
+	cachePlugin.CreateSharding(inteface{}) : 传入分片数据
+*/
+func TestSharding(t *testing.T) {
+	var tcs1 []TestUser
+	var count1 int
+	//填充分片 `1` 的缓存
+	cachePlugin.CreateSharding(1).Where("status = ?", 1).Find(&tcs1).Count(&count1)
+	fmt.Println("tcs1", tcs1, count1)
+
+	var tcs2 []TestUser
+	var count2 int
+	//填充分片 `2` 的缓存
+	cachePlugin.CreateSharding(2).Where("status = ?", 2).Find(&tcs2).Count(&count2)
+	fmt.Println("tcs2", tcs2, count2)
+	if len(tcs2) == 0 {
+		return
+	}
+
+	//update 使分片`2`失效
+	fmt.Println("update", cachePlugin.CreateSharding(2).Model(&tcs2[0]).Update("status", 6).RowsAffected)
+	//delete 使分片`2`失效
+	fmt.Println("delete", cachePlugin.CreateSharding(2).Delete(&tcs2[0]).RowsAffected)
+
+	//save 使分片`2`失效
+	tcs2[0].ID = 0
+	fmt.Println("save", cachePlugin.CreateSharding(2).Save(&tcs2[0]).RowsAffected)
 }
 
 /*

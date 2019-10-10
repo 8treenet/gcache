@@ -3,8 +3,9 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis"
 	"time"
+
+	"github.com/go-redis/redis"
 )
 
 func newCreateHandle(ch *Handle) *createHandle {
@@ -14,7 +15,7 @@ func newCreateHandle(ch *Handle) *createHandle {
 }
 
 type createHandle struct {
-	handle *Handle
+	handle    *Handle
 	setLuaSha string
 }
 
@@ -34,12 +35,12 @@ func (ch *createHandle) CreateModel(table string, primary interface{}, model int
 }
 
 // CreateCountSearch
-func (ch *createHandle) CreateCountSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
+func (ch *createHandle) CreateCountSearch(table, key, field string, whereField []string, values []interface{}, expiration int, shardingKeys []interface{}, joins ...struct {
 	ObjectField []string //使用的模型列
 	Table       string   //表名
 }) (e error) {
 	field = ch.handle.JoinCountSecondKey(field)
-	return ch.CreateSearch(table, key, field, whereField, values, expiration, joins...)
+	return ch.CreateSearch(table, key, field, whereField, values, expiration, shardingKeys, joins...)
 }
 
 // CreateSearch
@@ -47,49 +48,49 @@ func (ch *createHandle) CreateCountSearch(table, key, field string, whereField [
 //	ObjectField []string //使用的模型列
 //	Table       string   //表名
 //}) (e error) {
-	//return ch.createLuaSearch(table, key, field, whereField, values,expiration,joins...)
-	//now := time.Now().Unix()
-	//jsearch := &JsonSearch{Timeout: now, Primarys: values}
-	//buff, e := json.Marshal(jsearch)
-	//if e != nil {
-	//	return
-	//}
-	//
-	//searchKey := ch.handle.JoinSearchKey(table, key)
-	//e = ch.handle.redisClient.HSet(searchKey, field, buff).Err()
-	//ch.handle.Debug("Set search cache Key :", searchKey, "field :", field, "value :", string(buff), "error :", e)
-	//if e != nil {
-	//	return
-	//}
-	//
-	//e = ch.handle.redisClient.Expire(searchKey, time.Duration(expiration)*time.Second).Err()
-	//if e != nil {
-	//	return
-	//}
-	//
-	//for index := 0; index < len(whereField); index++ {
-	//	affectKey := ch.handle.JoinAffectKey(table, whereField[index])
-	//	e = ch.handle.redisClient.HSet(affectKey, searchKey, now).Err()
-	//	ch.handle.Debug("Set affect cache Key :", affectKey, "field :", searchKey, "value :", now, "error :", e)
-	//	if e != nil {
-	//		return e
-	//	}
-	//}
-	//for index := 0; index < len(joins); index++ {
-	//	for j := 0; j < len(joins[index].ObjectField); j++ {
-	//		affectKey := ch.handle.JoinAffectKey(joins[index].Table, joins[index].ObjectField[j])
-	//		e = ch.handle.redisClient.HSet(affectKey, searchKey, now).Err()
-	//		ch.handle.Debug("Set affect cache Key :", affectKey, "field :", searchKey, "value :", now, "error :", e)
-	//		if e != nil {
-	//			return e
-	//		}
-	//	}
-	//}
-	//return
+//return ch.createLuaSearch(table, key, field, whereField, values,expiration,joins...)
+//now := time.Now().Unix()
+//jsearch := &JsonSearch{Timeout: now, Primarys: values}
+//buff, e := json.Marshal(jsearch)
+//if e != nil {
+//	return
+//}
+//
+//searchKey := ch.handle.JoinSearchKey(table, key)
+//e = ch.handle.redisClient.HSet(searchKey, field, buff).Err()
+//ch.handle.Debug("Set search cache Key :", searchKey, "field :", field, "value :", string(buff), "error :", e)
+//if e != nil {
+//	return
+//}
+//
+//e = ch.handle.redisClient.Expire(searchKey, time.Duration(expiration)*time.Second).Err()
+//if e != nil {
+//	return
+//}
+//
+//for index := 0; index < len(whereField); index++ {
+//	affectKey := ch.handle.JoinAffectKey(table, whereField[index])
+//	e = ch.handle.redisClient.HSet(affectKey, searchKey, now).Err()
+//	ch.handle.Debug("Set affect cache Key :", affectKey, "field :", searchKey, "value :", now, "error :", e)
+//	if e != nil {
+//		return e
+//	}
+//}
+//for index := 0; index < len(joins); index++ {
+//	for j := 0; j < len(joins[index].ObjectField); j++ {
+//		affectKey := ch.handle.JoinAffectKey(joins[index].Table, joins[index].ObjectField[j])
+//		e = ch.handle.redisClient.HSet(affectKey, searchKey, now).Err()
+//		ch.handle.Debug("Set affect cache Key :", affectKey, "field :", searchKey, "value :", now, "error :", e)
+//		if e != nil {
+//			return e
+//		}
+//	}
+//}
+//return
 //}
 
 // CreateSearch
-func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, joins ...struct {
+func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, shardingKeys []interface{}, joins ...struct {
 	ObjectField []string //使用的模型列
 	Table       string   //表名
 }) (e error) {
@@ -102,23 +103,23 @@ func (ch *createHandle) CreateSearch(table, key, field string, whereField []stri
 		return
 	}
 
-	searchKey := ch.handle.JoinSearchKey(table, key)
+	searchKey := ch.handle.JoinSearchKey(table, key, shardingKeys)
 	keys = append(keys, searchKey)
-	argv = append(argv, field, string(buff), expiration, expiration + 3, timeout + 3)
+	argv = append(argv, field, string(buff), expiration, expiration+3, timeout+3)
 	ch.handle.RefreshEvent(searchKey, true)
 	ch.handle.Debug("Add script set search cache key :", searchKey, "field :", field, "value :", string(buff), "error :", nil)
 	for index := 0; index < len(whereField); index++ {
 		affectKey := ch.handle.JoinAffectKey(table, whereField[index])
 		keys = append(keys, affectKey)
 		ch.handle.RefreshEvent(affectKey, false)
-		ch.handle.Debug("Add script set affect cache key :", affectKey, "field :", searchKey, "value :", timeout + 3, "error :", nil)
+		ch.handle.Debug("Add script set affect cache key :", affectKey, "field :", searchKey, "value :", timeout+3, "error :", nil)
 	}
 	for index := 0; index < len(joins); index++ {
 		for j := 0; j < len(joins[index].ObjectField); j++ {
 			affectKey := ch.handle.JoinAffectKey(joins[index].Table, joins[index].ObjectField[j])
 			keys = append(keys, affectKey)
 			ch.handle.RefreshEvent(affectKey, false)
-			ch.handle.Debug("Add script set affect cache key :", affectKey, "field :", searchKey, "value :", timeout + 3, "error :", e)
+			ch.handle.Debug("Add script set affect cache key :", affectKey, "field :", searchKey, "value :", timeout+3, "error :", e)
 		}
 	}
 
@@ -126,7 +127,6 @@ func (ch *createHandle) CreateSearch(table, key, field string, whereField []stri
 	ch.handle.Debug("Create script execution, keys :", keys, "value:", argv, "error :", e)
 	return e
 }
-
 
 func (ch *createHandle) loadLua() {
 	script := redis.NewScript(`

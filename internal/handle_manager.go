@@ -2,31 +2,32 @@ package internal
 
 import (
 	"fmt"
-	"github.com/8treenet/gcache/option"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/8treenet/gcache/option"
 
 	"github.com/jinzhu/gorm"
 )
 
 const (
-	modelKey        = "%s_model_%s"  //模型key
-	searchKey       = "%s_search_%s" //查询主键列表 key
-	affectKey       = "%s_affect_%s" //影响key
-	checkTimeoutSec = 1800
-	skipCache = 		"cache:skip_cache" // 跳过缓存
+	modelKey          = "%s_model_%s"  //模型key
+	searchKey         = "%s_search_%s" //查询主键列表 key
+	affectKey         = "%s_affect_%s" //影响key
+	checkTimeoutSec   = 1800
+	skipCache         = "cache:skip_cache"          // 跳过缓存
 	whereModelsSearch = "cache:where_models_search" //join和select查询
+	whereSharding     = "cache:where_sharding"
 )
-
 
 func newHandleManager(db *gorm.DB, cp *plugin, redisOption *option.RedisOption) *Handle {
 	result := new(Handle)
 	result.redisClient = newRedisClient(redisOption)
 	result.db = db
 	result.cp = cp
-	result.cleaner = make(map[string]*struct{
-		unix int64
+	result.cleaner = make(map[string]*struct {
+		unix   int64
 		search bool
 	})
 	rand.Seed(time.Now().UnixNano())
@@ -37,12 +38,12 @@ type Handle struct {
 	redisClient RedisClient
 	db          *gorm.DB
 	cp          *plugin
-	cleaner     map[string]*struct{
-		unix int64
+	cleaner     map[string]*struct {
+		unix   int64
 		search bool
 	}
-	cleanerMutex     sync.Mutex
-	debug       bool
+	cleanerMutex sync.Mutex
+	debug        bool
 }
 
 func (h *Handle) NewDeleteHandle() *deleteHandle {
@@ -81,8 +82,14 @@ func (h *Handle) JoinModelKey(table string, primary interface{}) string {
 	return fmt.Sprintf(modelKey, table, fmt.Sprint(primary))
 }
 
-func (h *Handle) JoinSearchKey(table string, key string) string {
-	return fmt.Sprintf(searchKey, table, key)
+func (h *Handle) JoinSearchKey(table string, key string, shardingKeys []interface{}) string {
+	result := fmt.Sprintf(searchKey, table, key)
+	if len(shardingKeys) == 0 {
+		return result
+	}
+
+	result = fmt.Sprintf("%s_shard:%v", result, shardingKeys[0])
+	return result
 }
 
 func (h *Handle) JoinAffectKey(table string, key string) string {
@@ -93,17 +100,17 @@ func (h *Handle) JoinCountSecondKey(key string) string {
 	return "count:" + key
 }
 
-func (h *Handle) RefreshEvent(key string, search bool)  {
+func (h *Handle) RefreshEvent(key string, search bool) {
 	defer h.cleanerMutex.Unlock()
 	h.cleanerMutex.Lock()
 	_, ok := h.cleaner[key]
 	if !ok {
-		var item struct{
-			unix int64
+		var item struct {
+			unix   int64
 			search bool
 		}
 		item.search = search
-		item.unix = time.Now().Unix() + int64(checkTimeoutSec + rand.Intn(checkTimeoutSec))
+		item.unix = time.Now().Unix() + int64(checkTimeoutSec+rand.Intn(checkTimeoutSec))
 		h.cleaner[key] = &item
 	}
 	return
@@ -129,7 +136,7 @@ func (h *Handle) RefreshRun() {
 
 			dh := h.NewDeleteHandle()
 			go dh.refresh(key, item.search)
-			item.unix = nowUnix + int64(checkTimeoutSec + rand.Intn(checkTimeoutSec))
+			item.unix = nowUnix + int64(checkTimeoutSec+rand.Intn(checkTimeoutSec))
 		}
 		h.cleanerMutex.Unlock()
 	}

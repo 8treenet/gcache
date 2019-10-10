@@ -16,9 +16,14 @@ type Plugin interface {
 	DeleteSearch(model interface{}) error
 	//insert select update delete 都会跳过缓存处理
 	SkipCache() *gorm.DB
+
 	//join 和 子查询， 需要传入模型。
 	CreateRelative(...interface{}) *gorm.DB
 	SetRelative(*gorm.DB, ...interface{}) *gorm.DB
+
+	//分片 需要传入分片key
+	CreateSharding(...interface{}) *gorm.DB
+	SetSharding(*gorm.DB, ...interface{}) *gorm.DB
 	Debug()
 }
 
