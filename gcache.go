@@ -17,7 +17,8 @@ type Plugin interface {
 	//insert select update delete 都会跳过缓存处理
 	SkipCache() *gorm.DB
 	//join 和 子查询， 需要传入模型。
-	UseModels(...interface{}) *gorm.DB
+	CreateRelative(...interface{}) *gorm.DB
+	SetRelative(*gorm.DB, ...interface{}) *gorm.DB
 	Debug()
 }
 

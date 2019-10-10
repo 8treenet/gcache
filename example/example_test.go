@@ -2,13 +2,14 @@ package example_test
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
+	"testing"
+
 	"github.com/8treenet/gcache"
 	"github.com/8treenet/gcache/option"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"math/rand"
-	"sync"
-	"testing"
 )
 
 var (
@@ -33,7 +34,7 @@ type TestEmail struct {
 
 func init() {
 	var e error
-	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
+	addr := "root:123123@tcp(127.0.0.1:3306)/matrix?charset=utf8&parseTime=True&loc=Local"
 	db, e = gorm.Open("mysql", addr)
 	if e != nil {
 		panic(e)
@@ -42,13 +43,13 @@ func init() {
 	db.AutoMigrate(&TestEmail{})
 
 	opt := option.DefaultOption{}
-	opt.Expires = 300                //缓存时间，默认60秒。范围 30-900
-	opt.Level = option.LevelSearch   //缓存级别，默认LevelSearch。LevelDisable:关闭缓存，LevelModel:模型缓存， LevelSearch:查询缓存
-	opt.AsyncWrite = false           //异步缓存更新, 默认false。 insert update delete 成功后是否异步更新缓存
-	opt.PenetrationSafe = false 	 //开启防穿透, 默认false。
+	opt.Expires = 300              //缓存时间，默认60秒。范围 30-900
+	opt.Level = option.LevelSearch //缓存级别，默认LevelSearch。LevelDisable:关闭缓存，LevelModel:模型缓存， LevelSearch:查询缓存
+	opt.AsyncWrite = false         //异步缓存更新, 默认false。 insert update delete 成功后是否异步更新缓存
+	opt.PenetrationSafe = false    //开启防穿透, 默认false。
 
 	//缓存中间件 注入到Gorm
-	cachePlugin = gcache.AttachDB(db, &opt, &option.RedisOption{Addr:"localhost:6379"})
+	cachePlugin = gcache.AttachDB(db, &opt, &option.RedisOption{Addr: "localhost:6379"})
 
 	InitData()
 	//开启Debug，查看日志
@@ -195,26 +196,26 @@ func TestQueryOrder(t *testing.T) {
 
 /*
 	join查询缓存
-	cachePlugin.UseModels(model ...interface{}) : 传入要join的模型，辅助缓存做关联。
+	cachePlugin.CreateRelative(model ...interface{}) : 传入要join的模型，辅助缓存做关联。
 */
 func TestQueryJoin(t *testing.T) {
 	Two(func() {
 		var tcs []TestUser
 		var count int
-		cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id > ?", 18).Find(&tcs).Count(&count)
+		cachePlugin.CreateRelative(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id > ?", 18).Find(&tcs).Count(&count)
 		fmt.Println(tcs, count)
 	})
 }
 
 /*
 	子查询缓存
-	cachePlugin.UseModels(model ...interface{}) : 传入要子查询的模型，辅助缓存做关联。
+	cachePlugin.CreateRelative(model ...interface{}) : 传入要子查询的模型，辅助缓存做关联。
 */
 func TestSelect(t *testing.T) {
 	Two(func() {
 		var count int
 		var tcs []TestUser
-		cachePlugin.UseModels(&TestEmail{}).Where("id in(select test_user_id from test_emails where type_id > ?)", 18).Find(&tcs).Count(&count)
+		cachePlugin.CreateRelative(&TestEmail{}).Where("id in(select test_user_id from test_emails where type_id > ?)", 18).Find(&tcs).Count(&count)
 		fmt.Println(tcs, count)
 	})
 }
@@ -264,7 +265,7 @@ func TestUpdateInvalid1(t *testing.T) {
 
 	for index := 0; index < len(tcs); index++ {
 		//触发缓存失效
-		db.Model(&tcs[index]).Updates(map[string]interface{}{"age":tcs[index].Age-1, "password":"1111"})
+		db.Model(&tcs[index]).Updates(map[string]interface{}{"age": tcs[index].Age - 1, "password": "1111"})
 	}
 }
 
@@ -276,7 +277,7 @@ func TestUpdateInvalid2(t *testing.T) {
 	Two(func() {
 		var tcs []TestUser
 		var count int
-		cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
+		cachePlugin.CreateRelative(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
 		fmt.Println(tcs, count)
 	})
 
@@ -319,7 +320,7 @@ func TestDeleteInvalid(t *testing.T) {
 	//join查询 填充缓存
 	var tcs []TestUser
 	var count int
-	cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
+	cachePlugin.CreateRelative(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
 
 	//普通查询 填充缓存
 	var te TestEmail
@@ -337,7 +338,7 @@ func TestCreateInvalid(t *testing.T) {
 	//join查询 填充缓存
 	var tcs []TestUser
 	var count int
-	cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
+	cachePlugin.CreateRelative(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
 
 	//普通查询 填充缓存
 	var te TestEmail
@@ -364,14 +365,13 @@ func TestSingleFlight(t *testing.T) {
 
 			var count int
 			tcs = []TestUser{}
-			cachePlugin.UseModels(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
+			cachePlugin.CreateRelative(&TestEmail{}).Joins("left join test_emails on test_emails.test_user_id = test_users.id").Where("type_id >= ?", 18).Find(&tcs).Count(&count)
 			fmt.Println(tcs, count)
 			wait.Done()
 		}()
 	}
 	wait.Wait()
 }
-
 
 /*
 	防穿透测试, 可注释和解注观察效果。
@@ -384,7 +384,7 @@ func TestPenetration(t *testing.T) {
 		db.Find(&tcs, []int{100, 200})
 		fmt.Println(tcs)
 
-		tcs =  []TestUser{}
+		tcs = []TestUser{}
 		db.Where("user_name = ?", "不存在").Find(&tcs).Count(&count)
 		fmt.Println(tcs, count)
 	})

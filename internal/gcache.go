@@ -48,13 +48,22 @@ func (cp *plugin) SkipCache() *gorm.DB {
 	return cp.db.New().InstantSet(skipCache, true)
 }
 
-// UseModels
-func (cp *plugin) UseModels(models ...interface{}) *gorm.DB {
+// CreateRelative
+func (cp *plugin) CreateRelative(models ...interface{}) *gorm.DB {
 	if len(models) == 0 {
 		panic("models empty")
 	}
 
 	return cp.db.New().InstantSet(whereModelsSearch, models)
+}
+
+// SetRelative
+func (cp *plugin) SetRelative(db *gorm.DB, models ...interface{}) *gorm.DB {
+	if len(models) == 0 {
+		panic("models empty")
+	}
+
+	return db.InstantSet(whereModelsSearch, models)
 }
 
 // Debug
