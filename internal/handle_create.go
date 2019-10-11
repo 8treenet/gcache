@@ -35,12 +35,12 @@ func (ch *createHandle) CreateModel(table string, primary interface{}, model int
 }
 
 // CreateCountSearch
-func (ch *createHandle) CreateCountSearch(table, key, field string, whereField []string, values []interface{}, expiration int, shardingKeys []interface{}, joins ...struct {
+func (ch *createHandle) CreateCountSearch(table, key, field string, whereField []string, values []interface{}, expiration int, indexKeys []interface{}, joins ...struct {
 	ObjectField []string //使用的模型列
 	Table       string   //表名
 }) (e error) {
 	field = ch.handle.JoinCountSecondKey(field)
-	return ch.CreateSearch(table, key, field, whereField, values, expiration, shardingKeys, joins...)
+	return ch.CreateSearch(table, key, field, whereField, values, expiration, indexKeys, joins...)
 }
 
 // CreateSearch
@@ -90,7 +90,7 @@ func (ch *createHandle) CreateCountSearch(table, key, field string, whereField [
 //}
 
 // CreateSearch
-func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, shardingKeys []interface{}, joins ...struct {
+func (ch *createHandle) CreateSearch(table, key, field string, whereField []string, values []interface{}, expiration int, indexKeys []interface{}, joins ...struct {
 	ObjectField []string //使用的模型列
 	Table       string   //表名
 }) (e error) {
@@ -103,7 +103,7 @@ func (ch *createHandle) CreateSearch(table, key, field string, whereField []stri
 		return
 	}
 
-	searchKey := ch.handle.JoinSearchKey(table, key, shardingKeys)
+	searchKey := ch.handle.JoinSearchKey(table, key, indexKeys)
 	keys = append(keys, searchKey)
 	argv = append(argv, field, string(buff), expiration, expiration+3, timeout+3)
 	ch.handle.RefreshEvent(searchKey, true)

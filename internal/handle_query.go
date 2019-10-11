@@ -94,7 +94,7 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 
 // BySearch 通过条件查询主键列表
 func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e error) {
-	jsearch, e := q.getSearchPrimarys(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue, scope.shardingKeys)
+	jsearch, e := q.getSearchPrimarys(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue, scope.indexKeys)
 	if e != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 
 	if len(rows) > 0 || scope.opt.PenetrationSafe {
 		create := newCreateHandle(q.handle)
-		if e = create.CreateSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.shardingKeys, scope.joinsCondition...); e != nil {
+		if e = create.CreateSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLValue, scope.condition.ObjectField, rows, scope.opt.Expires, scope.indexKeys, scope.joinsCondition...); e != nil {
 			return
 		}
 	}
@@ -121,7 +121,7 @@ func (q *queryHandle) BySearch(scope *easyScope) (primarys []interface{}, e erro
 
 //ByCount 通过条件查询count
 func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
-	jsearch, e := q.getSearchCount(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue, scope.shardingKeys)
+	jsearch, e := q.getSearchCount(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue, scope.indexKeys)
 	if e != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
 
 	if count > 0 || scope.opt.PenetrationSafe {
 		create := newCreateHandle(q.handle)
-		if e = create.CreateCountSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.shardingKeys, scope.joinsCondition...); e != nil {
+		if e = create.CreateCountSearch(scope.Table, scope.condition.SQLKey, scope.condition.SQLCountValue, scope.condition.ObjectField, []interface{}{count}, scope.opt.Expires, scope.indexKeys, scope.joinsCondition...); e != nil {
 			return
 		}
 	}
@@ -146,8 +146,8 @@ func (q *queryHandle) ByCount(scope *easyScope) (count int, e error) {
 }
 
 // getSearchPrimarys
-func (q *queryHandle) getSearchPrimarys(table string, key string, field string, shardingKeys []interface{}) (jsearch *JsonSearch, e error) {
-	searchKey := q.handle.JoinSearchKey(table, key, shardingKeys)
+func (q *queryHandle) getSearchPrimarys(table string, key string, field string, indexKeys []interface{}) (jsearch *JsonSearch, e error) {
+	searchKey := q.handle.JoinSearchKey(table, key, indexKeys)
 	value, e := q.handle.redisClient.HGet(searchKey, field).Result()
 	if e == redis.Nil {
 		e = nil
@@ -166,9 +166,9 @@ func (q *queryHandle) getSearchPrimarys(table string, key string, field string, 
 }
 
 // getSearchPrimarys
-func (q *queryHandle) getSearchCount(table string, key string, field string, shardingKeys []interface{}) (jsearch *JsonSearch, e error) {
+func (q *queryHandle) getSearchCount(table string, key string, field string, indexKeys []interface{}) (jsearch *JsonSearch, e error) {
 	field = q.handle.JoinCountSecondKey(field)
-	serachKey := q.handle.JoinSearchKey(table, key, shardingKeys)
+	serachKey := q.handle.JoinSearchKey(table, key, indexKeys)
 	value, e := q.handle.redisClient.HGet(serachKey, field).Result()
 	if e == redis.Nil {
 		e = nil

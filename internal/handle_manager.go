@@ -19,7 +19,7 @@ const (
 	checkTimeoutSec   = 1800
 	skipCache         = "cache:skip_cache"          // 跳过缓存
 	whereModelsSearch = "cache:where_models_search" //join和select查询
-	whereSharding     = "cache:where_sharding"
+	whereIndex     = "cache:where_index"
 )
 
 func newHandleManager(db *gorm.DB, cp *plugin, redisOption *option.RedisOption) *Handle {
@@ -83,15 +83,15 @@ func (h *Handle) JoinModelKey(table string, primary interface{}) string {
 	return fmt.Sprintf(modelKey, table, fmt.Sprint(primary))
 }
 
-func (h *Handle) JoinSearchKey(table string, key string, shardingKeys []interface{}) string {
+func (h *Handle) JoinSearchKey(table string, key string, indexKeys []interface{}) string {
 	result := fmt.Sprintf(searchKey, table, key)
-	if len(shardingKeys) == 0 {
+	if len(indexKeys) == 0 {
 		return result
 	}
 
 	var sk []string
-	for _, key := range shardingKeys {
-		sk = append(sk, "shard:"+fmt.Sprint(key))
+	for _, key := range indexKeys {
+		sk = append(sk, "index:"+fmt.Sprint(key))
 	}
 	result = fmt.Sprintf("%s_%s", result, strings.Join(sk, "_"))
 	return result

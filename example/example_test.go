@@ -352,33 +352,34 @@ func TestCreateInvalid(t *testing.T) {
 }
 
 /*
-	Sharding测试
-	cachePlugin.CreateSharding(inteface{}) : 传入分片数据
+	Index测试
+	cachePlugin.CreateIndex(inteface{}) : 传入索引数据
 */
-func TestSharding(t *testing.T) {
+func TestIndex(t *testing.T) {
 	var tcs1 []TestUser
 	var count1 int
-	//填充分片 `1` 的缓存
-	cachePlugin.CreateSharding(1).Where("status = ?", 1).Find(&tcs1).Count(&count1)
+	//填充索引 `1` 的缓存
+	cachePlugin.SetIndex(db.Where("status = ?", 1), 1, 345).Find(&tcs1).Count(&count1)
+
 	fmt.Println("tcs1", tcs1, count1)
 
 	var tcs2 []TestUser
 	var count2 int
-	//填充分片 `2` 的缓存
-	cachePlugin.CreateSharding(2).Where("status = ?", 2).Find(&tcs2).Count(&count2)
+	//填充索引 `2` 的缓存
+	cachePlugin.CreateIndex(2).Where("status = ?", 2).Find(&tcs2).Count(&count2)
 	fmt.Println("tcs2", tcs2, count2)
 	if len(tcs2) == 0 {
 		return
 	}
 
-	//update 使分片`2`失效
-	fmt.Println("update", cachePlugin.CreateSharding(2).Model(&tcs2[0]).Update("status", 6).RowsAffected)
-	//delete 使分片`2`失效
-	fmt.Println("delete", cachePlugin.CreateSharding(2).Delete(&tcs2[0]).RowsAffected)
+	//update 使索引`2`失效
+	fmt.Println("update", cachePlugin.CreateIndex(2).Model(&tcs2[0]).Update("status", 6).RowsAffected)
+	//delete 使索引`2`失效
+	fmt.Println("delete", cachePlugin.CreateIndex(2).Delete(&tcs2[0]).RowsAffected)
 
-	//save 使分片`2`失效
+	//save 使索引`2`失效
 	tcs2[0].ID = 0
-	fmt.Println("save", cachePlugin.CreateSharding(2).Save(&tcs2[0]).RowsAffected)
+	fmt.Println("save", cachePlugin.CreateIndex(2).Save(&tcs2[0]).RowsAffected)
 }
 
 /*

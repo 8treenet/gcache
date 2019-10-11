@@ -21,9 +21,9 @@ type Plugin interface {
 	CreateRelative(...interface{}) *gorm.DB
 	SetRelative(*gorm.DB, ...interface{}) *gorm.DB
 
-	//分片 需要传入分片key
-	CreateSharding(...interface{}) *gorm.DB
-	SetSharding(*gorm.DB, ...interface{}) *gorm.DB
+	//索引 需要传入分片key
+	CreateIndex(...interface{}) *gorm.DB
+	SetIndex(*gorm.DB, ...interface{}) *gorm.DB
 	Debug()
 }
 
