@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -88,7 +89,11 @@ func (h *Handle) JoinSearchKey(table string, key string, shardingKeys []interfac
 		return result
 	}
 
-	result = fmt.Sprintf("%s_shard:%v", result, shardingKeys[0])
+	var sk []string
+	for _, key := range shardingKeys {
+		sk = append(sk, "shard:"+fmt.Sprint(key))
+	}
+	result = fmt.Sprintf("%s_%s", result, strings.Join(sk, "_"))
 	return result
 }
 
