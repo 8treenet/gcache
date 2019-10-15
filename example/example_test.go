@@ -352,34 +352,34 @@ func TestCreateInvalid(t *testing.T) {
 }
 
 /*
-	Index测试
-	cachePlugin.CreateIndex(inteface{}) : 传入索引数据
+	Tag测试
+	cachePlugin.CreateTag(...inteface{}) : 传入标签数据
 */
-func TestIndex(t *testing.T) {
+func TestTag(t *testing.T) {
 	var tcs1 []TestUser
 	var count1 int
-	//填充索引 `1` 的缓存
-	cachePlugin.SetIndex(db.Where("status = ?", 1), 1, 345).Find(&tcs1).Count(&count1)
+	//填充tag `1` 的缓存
+	cachePlugin.SetTag(db.Where("status = ?", 1), 1, 345).Find(&tcs1).Count(&count1)
 
 	fmt.Println("tcs1", tcs1, count1)
 
 	var tcs2 []TestUser
 	var count2 int
-	//填充索引 `2` 的缓存
-	cachePlugin.CreateIndex(2).Where("status = ?", 2).Find(&tcs2).Count(&count2)
+	//填充tag `2` 的缓存
+	cachePlugin.CreateTag(2).Where("status = ?", 2).Find(&tcs2).Count(&count2)
 	fmt.Println("tcs2", tcs2, count2)
 	if len(tcs2) == 0 {
 		return
 	}
 
-	//update 使索引`2`失效
-	fmt.Println("update", cachePlugin.CreateIndex(2).Model(&tcs2[0]).Update("status", 6).RowsAffected)
-	//delete 使索引`2`失效
-	fmt.Println("delete", cachePlugin.CreateIndex(2).Delete(&tcs2[0]).RowsAffected)
+	//update 使tag`2`失效
+	fmt.Println("update", cachePlugin.CreateTag(2).Model(&tcs2[0]).Update("status", 6).RowsAffected)
+	//delete 使tag`2`失效
+	fmt.Println("delete", cachePlugin.CreateTag(2).Delete(&tcs2[0]).RowsAffected)
 
-	//save 使索引`2`失效
+	//save 使tag`2`失效
 	tcs2[0].ID = 0
-	fmt.Println("save", cachePlugin.CreateIndex(2).Save(&tcs2[0]).RowsAffected)
+	fmt.Println("save", cachePlugin.CreateTag(2).Save(&tcs2[0]).RowsAffected)
 }
 
 /*

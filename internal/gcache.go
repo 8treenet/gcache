@@ -66,8 +66,8 @@ func (cp *plugin) SetRelative(db *gorm.DB, models ...interface{}) *gorm.DB {
 	return db.InstantSet(whereModelsSearch, models)
 }
 
-// CreateIndex
-func (cp *plugin) CreateIndex(indexKey ...interface{}) *gorm.DB {
+// CreateTag
+func (cp *plugin) CreateTag(indexKey ...interface{}) *gorm.DB {
 	if len(indexKey) == 0 {
 		panic("IndexKey empty")
 	}
@@ -75,8 +75,8 @@ func (cp *plugin) CreateIndex(indexKey ...interface{}) *gorm.DB {
 	return cp.db.New().InstantSet(whereIndex, indexKey)
 }
 
-// SetIndex
-func (cp *plugin) SetIndex(db *gorm.DB, indexKey ...interface{}) *gorm.DB {
+// SetTag
+func (cp *plugin) SetTag(db *gorm.DB, indexKey ...interface{}) *gorm.DB {
 	if len(indexKey) == 0 {
 		panic("IndexKey empty")
 	}
