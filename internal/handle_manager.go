@@ -19,7 +19,7 @@ const (
 	checkTimeoutSec   = 1800
 	skipCache         = "cache:skip_cache"          // 跳过缓存
 	whereModelsSearch = "cache:where_models_search" //join和select查询
-	whereIndex     = "cache:where_index"
+	whereIndex        = "cache:where_index"
 )
 
 func newHandleManager(db *gorm.DB, cp *plugin, redisOption *option.RedisOption) *Handle {
@@ -91,9 +91,9 @@ func (h *Handle) JoinSearchKey(table string, key string, indexKeys []interface{}
 
 	var sk []string
 	for _, key := range indexKeys {
-		sk = append(sk, "index:"+fmt.Sprint(key))
+		sk = append(sk, "tag:"+fmt.Sprint(key))
 	}
-	result = fmt.Sprintf("%s_%s", result, strings.Join(sk, "_"))
+	result = fmt.Sprintf("%s_%s", result, strings.Join(sk, "_")) + "_"
 	return result
 }
 

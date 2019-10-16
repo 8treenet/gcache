@@ -93,7 +93,11 @@ func (dh *deleteHandle) DeleteSearch(table string, sfs []*gorm.StructField, inde
 	} else {
 		sks := make([]interface{}, 0, len(indexKey))
 		for index := 0; index < len(indexKey); index++ {
-			sks = append(sks, fmt.Sprintf("_index:%v", indexKey[index]))
+			if fmt.Sprint(indexKey[index]) == "" {
+				sks = append(sks, "")
+			} else {
+				sks = append(sks, fmt.Sprintf("_tag:%v_", indexKey[index]))
+			}
 		}
 		_, e = dh.handle.redisClient.EvalSha(dh.delIndexSha, keys, sks...).Result()
 		dh.handle.Debug("Delete script execution, keys :", keys, " argv:", sks, " error :", e)
@@ -123,7 +127,10 @@ func (dh *deleteHandle) loadLua() {
 		local delKeys = redis.call("HKEYS", v)
 		for _, dv in pairs(delKeys) do
 			for _, indexKey in pairs(ARGV) do
-				if string.find(dv, indexKey) ~= nil then
+				if indexKey == "" and string.find(dv, "_tag:") == nil then
+					redis.call("DEL", dv)
+					redis.call("HDEL", v, dv)
+				elseif indexKey ~= "" and string.find(dv, indexKey) ~= nil then
 					redis.call("DEL", dv)
 					redis.call("HDEL", v, dv)
 				end
