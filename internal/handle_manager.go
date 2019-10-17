@@ -16,7 +16,7 @@ const (
 	modelKey          = "%s_model_%s"  //模型key
 	searchKey         = "%s_search_%s" //查询主键列表 key
 	affectKey         = "%s_affect_%s" //影响key
-	checkTimeoutSec   = 1800
+	checkTimeoutSec   = 3600
 	skipCache         = "cache:skip_cache"          // 跳过缓存
 	whereModelsSearch = "cache:where_models_search" //join和select查询
 	whereIndex        = "cache:where_index"
