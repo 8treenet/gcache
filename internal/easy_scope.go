@@ -67,7 +67,7 @@ type easyScope struct {
 
 	primaryFieldName string
 	handle           *Handle
-	indexKeys     []interface{}
+	indexKeys        []interface{}
 }
 
 func (es *easyScope) QueryScope() *easyScope {
@@ -248,6 +248,7 @@ func (es *easyScope) whereSQL() (sql string) {
 
 func (es *easyScope) buildCondition(clause map[string]interface{}, include bool) (str string) {
 	var (
+		quotedTableName  = es.QuotedTableName()
 		quotedPrimaryKey = es.Quote(es.PrimaryKey())
 		equalSQL         = "="
 		inSQL            = "IN"
@@ -261,15 +262,15 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 
 	switch value := clause["query"].(type) {
 	case sql.NullInt64:
-		return fmt.Sprintf("(%v %s %v)", quotedPrimaryKey, equalSQL, value.Int64)
+		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value.Int64)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		es.condition.PrimaryValue = []interface{}{value}
-		return fmt.Sprintf("(%v %s %v)", quotedPrimaryKey, equalSQL, value)
+		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value)
 	case []int, []int8, []int16, []int32, []int64, []uint, []uint8, []uint16, []uint32, []uint64, []string, []interface{}:
 		if !include && reflect.ValueOf(value).Len() == 0 {
 			return
 		}
-		str = fmt.Sprintf("(%v %s (?))", quotedPrimaryKey, inSQL)
+		str = fmt.Sprintf("(%v.%v %s (?))", quotedTableName, quotedPrimaryKey, inSQL)
 		clause["args"] = []interface{}{value}
 		rvalue := reflect.ValueOf(value)
 		for index := 0; index < rvalue.Len(); index++ {
@@ -287,20 +288,15 @@ func (es *easyScope) buildCondition(clause map[string]interface{}, include bool)
 			}
 		}
 		if isNumberRegexp.MatchString(value) {
-			es.condition.PrimaryValue = []interface{}{value}
-			return fmt.Sprintf("(%v %s %v)", quotedPrimaryKey, equalSQL, es.AddToVars(value))
+			return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, es.AddToVars(value))
 		}
 
 		if value != "" {
-			if !es.IsCompleteParentheses(value) {
-				es.Err(fmt.Errorf("incomplete parentheses found: %v", value))
-				return
-			}
 			if !include {
 				if comparisonRegexp.MatchString(value) {
 					str = fmt.Sprintf("NOT (%v)", value)
 				} else {
-					str = fmt.Sprintf("(%v NOT IN (?))", es.Quote(value))
+					str = fmt.Sprintf("(%v.%v NOT IN (?))", quotedTableName, es.Quote(value))
 				}
 			} else {
 				str = fmt.Sprintf("(%v)", value)
