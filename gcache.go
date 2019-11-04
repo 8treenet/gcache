@@ -6,6 +6,23 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+const (
+	LevelDisable = option.LevelDisable
+	LevelModel   = option.LevelModel
+	LevelSearch  = option.LevelSearch
+	MinExpires   = option.MinExpires
+	MaxExpires   = option.MaxExpires
+)
+
+type (
+	// RedisOption .
+	RedisOption = option.RedisOption
+	// ModelOption .
+	ModelOption = option.ModelOption
+	// DefaultOption .
+	DefaultOption = option.DefaultOption
+)
+
 // Plugin .
 type Plugin interface {
 	//清库

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/8treenet/gcache"
-	"github.com/8treenet/gcache/option"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
@@ -42,14 +41,14 @@ func init() {
 	db.AutoMigrate(&TestUser{})
 	db.AutoMigrate(&TestEmail{})
 
-	opt := option.DefaultOption{}
+	opt := gcache.DefaultOption{}
 	opt.Expires = 300              //缓存时间，默认60秒。范围 30-900
-	opt.Level = option.LevelSearch //缓存级别，默认LevelSearch。LevelDisable:关闭缓存，LevelModel:模型缓存， LevelSearch:查询缓存
+	opt.Level = gcache.LevelSearch //缓存级别，默认LevelSearch。LevelDisable:关闭缓存，LevelModel:模型缓存， LevelSearch:查询缓存
 	opt.AsyncWrite = false         //异步缓存更新, 默认false。 insert update delete 成功后是否异步更新缓存
 	opt.PenetrationSafe = false    //开启防穿透, 默认false。
 
 	//缓存中间件 注入到Gorm
-	cachePlugin = gcache.AttachDB(db, &opt, &option.RedisOption{Addr: "localhost:6379"})
+	cachePlugin = gcache.AttachDB(db, &opt, &gcache.RedisOption{Addr: "localhost:6379"})
 
 	InitData()
 	//开启Debug，查看日志
@@ -167,7 +166,7 @@ func TestQueryNot(t *testing.T) {
 		var tc TestUser
 		var tcs []TestUser
 		var count int
-		db.Not("user_name", "not_1_yangshu").Order("id desc").Limit(5).Find(&tcs).Count(&count)
+		db.Not("user_name", "not_1_yangshu").Order("id,age desc").Limit(5).Find(&tcs).Count(&count)
 		db.Not("user_name = ?", "not_2_yangshu").First(&tc)
 
 		fmt.Println(tcs, count)
@@ -233,9 +232,9 @@ func TestModelOpt(t *testing.T) {
 }
 
 //Cache 重写模型单独配置项
-func (te *TestEmail) Cache(opt *option.ModelOption) {
+func (te *TestEmail) Cache(opt *gcache.ModelOption) {
 	opt.Expires = 600
-	opt.Level = option.LevelSearch
+	opt.Level = gcache.LevelSearch
 	opt.AsyncWrite = false
 	opt.PenetrationSafe = false
 }
@@ -422,7 +421,7 @@ func TestPenetration(t *testing.T) {
 }
 
 //Cache 重写模型单独配置项
-func (te *TestUser) Cache(opt *option.ModelOption) {
+func (te *TestUser) Cache(opt *gcache.ModelOption) {
 	//解注开启防穿透
 	//opt.PenetrationSafe = true
 }
