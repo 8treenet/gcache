@@ -2,8 +2,9 @@ package internal
 
 import (
 	"fmt"
-	"github.com/8treenet/gcache/option"
 	"reflect"
+
+	"github.com/8treenet/gcache/option"
 
 	"github.com/jinzhu/gorm"
 )

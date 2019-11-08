@@ -25,7 +25,13 @@ func newEasyScope(s *gorm.Scope, h *Handle) *easyScope {
 	es.sourceScope = s
 	es.optionSetting()
 	es.Table = es.TableName()
-	es.primaryFieldName = es.PrimaryField().Name
+	primary := es.PrimaryField()
+	if primary == nil {
+		es.DB().InstantSet(skipCache, true)
+		return es
+	}
+
+	es.primaryFieldName = primary.Name
 	es.handle = h
 
 	if models, ok := s.Get(whereModelsSearch); ok {

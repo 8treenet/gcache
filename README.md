@@ -38,6 +38,7 @@ func init() {
 ```
 
 #### 约定
+- 模型必须指明主键 `gorm:"primary_key"`
 - 不支持 Group
 - 不支持 Having
 - 查询条件和查询参数分离
