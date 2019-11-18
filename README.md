@@ -12,7 +12,7 @@
 
 #### 安装
 ```sh
-$ go get -u github.com/8treenet/gcache
+$ go get github.com/8treenet/gcache
 ```
 #### 快速使用
 ```go
