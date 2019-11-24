@@ -26,7 +26,7 @@ func newEasyScope(s *gorm.Scope, h *Handle) *easyScope {
 	es.optionSetting()
 	es.Table = es.TableName()
 	primary := es.PrimaryField()
-	if primary == nil {
+	if primary == nil || len(es.PrimaryFields()) > 1 {
 		es.DB().InstantSet(skipCache, true)
 		return es
 	}
