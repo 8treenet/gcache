@@ -448,7 +448,8 @@ func (es *easyScope) optionSetting() {
 }
 
 func (es *easyScope) limitAndOffsetSQL() string {
-	return es.Dialect().LimitAndOffsetSQL(es.forgeSearch.limit, es.forgeSearch.offset)
+	sql, _ := es.Dialect().LimitAndOffsetSQL(es.forgeSearch.limit, es.forgeSearch.offset)
+	return sql
 }
 
 func (es *easyScope) combinedConditionSql() string {
