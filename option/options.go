@@ -10,7 +10,7 @@ const (
 	LevelModel   = 1 //只缓存模型
 	LevelSearch  = 2 //查询缓存
 	MinExpires   = 30
-	MaxExpires   = 3600
+	MaxExpires   = 43200
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 
 // Opt .
 type Opt struct {
-	Expires         int  //默认120秒，30-900
+	Expires         int  //默认120秒，30-43200
 	Level           int  //默认LevelSearch，LevelDisable:关闭，LevelModel:模型缓存， LevelSearch:查询缓存
 	AsyncWrite      bool //默认false， insert update delete 成功后是否异步更新缓存
 	PenetrationSafe bool //默认false, 开启防穿透。
