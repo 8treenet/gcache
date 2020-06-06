@@ -33,7 +33,7 @@ type TestEmail struct {
 
 func init() {
 	var e error
-	addr := "用户名:密码@tcp(ip地址:端口)/数据库?charset=utf8&parseTime=True&loc=Local"
+	addr := "root:123123@tcp(127.0.0.1:3306)/freedom?charset=utf8&parseTime=True&loc=Local"
 	db, e = gorm.Open("mysql", addr)
 	if e != nil {
 		panic(e)
@@ -90,14 +90,20 @@ func Two(fun func()) {
 */
 func TestQuerySimple(t *testing.T) {
 	Two(func() {
-		var tcs []TestUser
+		var tcs []*TestUser
+		var tcs2 []TestUser
 		db.Find(&tcs, []int{1, 2})
-		fmt.Println(tcs)
-		db.Where([]int{1, 2}, &tcs)
-		fmt.Println(tcs)
+		fmt.Println("1", tcs)
+		db.Find(&tcs2, []int{1, 2})
+		fmt.Println("2", tcs2)
+
 		var tc TestUser
 		db.First(&tc, 1)
-		fmt.Println(tc)
+		fmt.Println("3", tc)
+		db.Last(&tc, 1)
+		fmt.Println("4", tc)
+		db.Where("id = ?", 1, &tc)
+		fmt.Println("5", tc)
 	})
 }
 
@@ -121,6 +127,7 @@ func TestQueryWhere(t *testing.T) {
 	Two(func() {
 		var tc TestUser
 		var tcs []TestUser
+		var tcs2 []*TestUser
 		var count int
 		//错误的方式 db.Where("user_name = name_1").First(&tc)
 		db.Where("user_name = ?", "name_1").First(&tc)
@@ -158,6 +165,14 @@ func TestQueryWhere(t *testing.T) {
 		db.First(&tc, "user_name =? and age = ?", "name_7", 27)
 		fmt.Println("where 9", tc)
 		tc = TestUser{}
+
+		db.Find(&tcs2, &TestUser{UserName: "name_11"})
+		fmt.Println("where 10", tcs2)
+		tcs2 = []*TestUser{}
+
+		db.Where("user_name in (?)", []string{"name_17", "name_18", "name_19", "name_20"}).Limit(3).Find(&tcs2).Count(&count)
+		fmt.Println("where 11", tcs2, count)
+		tcs2 = []*TestUser{}
 	})
 }
 

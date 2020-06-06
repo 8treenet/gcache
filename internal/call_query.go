@@ -141,7 +141,7 @@ func (c *callQuery) sortModels(es *easyScope, primarys []interface{}, inModels [
 
 	for index := 0; index < len(inModels); index++ {
 		value := reflect.ValueOf(inModels[index])
-		if value.Kind() == reflect.Ptr {
+		for value.Kind() == reflect.Ptr {
 			value = value.Elem()
 		}
 
@@ -169,6 +169,17 @@ func (c *callQuery) setIndirectValue(es *easyScope, models []interface{}) {
 			if model.Kind() == reflect.Ptr {
 				model = model.Elem()
 			}
+
+			if value.Type().Elem().Kind() == reflect.Ptr {
+				newModel := reflect.New(model.Type())
+				newModel.Elem().Set(model)
+				if newModel.Elem().Kind() == reflect.Ptr {
+					newModel = newModel.Elem()
+				}
+				value = reflect.Append(value, newModel)
+				continue
+			}
+
 			value = reflect.Append(value, model)
 		}
 		es.IndirectValue().Set(value)

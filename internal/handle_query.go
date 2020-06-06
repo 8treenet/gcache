@@ -82,6 +82,9 @@ func (q *queryHandle) ByPrimary(scope *easyScope, primarys ...interface{}) (objs
 	pkFieldName := scope.PrimaryFieldName()
 	for index := 0; index < rows.Len(); index++ {
 		row := rows.Index(index)
+		if row.Kind() == reflect.Ptr {
+			row = row.Elem()
+		}
 		pk := row.FieldByName(pkFieldName).Interface()
 		if pk == nil {
 			continue
