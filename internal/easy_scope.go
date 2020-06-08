@@ -434,9 +434,10 @@ func (es *easyScope) optionSetting() {
 	}
 	es.valueType = structValue.Type()
 
-	ccall := structValue.Addr().MethodByName("Cache")
-	if ccall.IsValid() {
-		ccall.Call([]reflect.Value{reflect.ValueOf(es.opt)})
+	if structValue.CanAddr() {
+		if ccall := structValue.Addr().MethodByName("Cache"); ccall.IsValid() {
+			ccall.Call([]reflect.Value{reflect.ValueOf(es.opt)})
+		}
 	}
 
 	if es.opt.Expires < option.MinExpires {
