@@ -1,4 +1,4 @@
-module github.com/8treenet/gcache
+module github.com/freyo/gcache
 
 go 1.13
 
