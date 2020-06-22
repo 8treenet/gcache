@@ -27,7 +27,7 @@ func (dh *deleteHandle) flushDB() error {
 	return dh.handle.redisClient.FlushDB().Err()
 }
 
-func (dh *deleteHandle) delModle(table string, primarys ...interface{}) error {
+func (dh *deleteHandle) delModel(table string, primarys ...interface{}) error {
 	if len(primarys) == 0 {
 		return errors.New("primarys empty")
 	}
