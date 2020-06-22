@@ -79,7 +79,7 @@ func (del *callDelete) afterInvoke(scope *gorm.Scope) {
 
 	writeRedis := func(delSearch bool) {
 		delhandle := del.handle.NewDeleteHandle()
-		delhandle.delModle(escope.Table, primarys...)
+		delhandle.delModel(escope.Table, primarys...)
 		if delSearch {
 			delhandle.DeleteSearchByScope(escope)
 		}

@@ -61,7 +61,7 @@ func (create *callCreate) afterInvoke(scope *gorm.Scope) {
 		}
 
 		if escope.opt.PenetrationSafe {
-			delHandle.delModle(escope.Table, escope.PrimaryKeyValue())
+			delHandle.delModel(escope.Table, escope.PrimaryKeyValue())
 		}
 	}
 

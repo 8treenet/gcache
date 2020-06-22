@@ -34,7 +34,7 @@ func (cp *plugin) FlushDB() error {
 // DeleteModel
 func (cp *plugin) DeleteModel(model interface{}, primarys ...interface{}) error {
 	table := cp.db.NewScope(model).TableName()
-	return cp.handle.NewDeleteHandle().delModle(table, primarys...)
+	return cp.handle.NewDeleteHandle().delModel(table, primarys...)
 }
 
 // DeleteSearch

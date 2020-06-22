@@ -76,7 +76,7 @@ func (cu *callUpdate) afterInvoke(scope *gorm.Scope) {
 	}
 
 	writeRedis := func(delSearch bool) {
-		cu.handle.NewDeleteHandle().delModle(escope.Table, primarys...)
+		cu.handle.NewDeleteHandle().delModel(escope.Table, primarys...)
 		if delSearch {
 			cu.handle.NewUpdateHandle().UpdateSearch(escope)
 		}
