@@ -73,6 +73,9 @@ func (c *callQuery) pass(es *easyScope) bool {
 	if _, ok := es.InstanceGet("gorm:started_transaction"); ok {
 		return true
 	}
+	if _, ok := es.InstanceGet("gorm:association:source"); ok {
+		return true
+	}
 
 	if es.opt.Level == option.LevelDisable {
 		return true

@@ -64,6 +64,9 @@ func (c *callRow) pass(es *easyScope) bool {
 	if _, ok := es.sourceScope.InstanceGet("gorm:started_transaction"); ok {
 		return true
 	}
+	if _, ok := es.InstanceGet("gorm:association:source"); ok {
+		return true
+	}
 	if _, ok := es.Get("cache:easy_count"); ok {
 		return true
 	}

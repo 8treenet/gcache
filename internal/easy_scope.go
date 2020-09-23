@@ -434,6 +434,9 @@ func (es *easyScope) optionSetting() {
 	}
 	es.valueType = structValue.Type()
 
+	if !structValue.CanAddr() {
+		return
+	}
 	ccall := structValue.Addr().MethodByName("Cache")
 	if ccall.IsValid() {
 		ccall.Call([]reflect.Value{reflect.ValueOf(es.opt)})
