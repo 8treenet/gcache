@@ -81,9 +81,6 @@ func (es *easyScope) QueryScope() *easyScope {
 	es.condition.SQLKey = strings.ToLower(es.condition.SQLKey)
 	es.condition.SQLKey = strings.ReplaceAll(es.condition.SQLKey, "`deleted_at` is null", "")
 	for _, field := range es.Fields() {
-		if field.IsPrimaryKey {
-			continue
-		}
 
 		column := strings.ReplaceAll(es.Quote(field.DBName), "`", "")
 		if strings.ToLower(column) == "deleted_at" {
