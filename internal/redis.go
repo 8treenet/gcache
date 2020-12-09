@@ -21,8 +21,8 @@ type RedisClient interface {
 	HScan(key string, cursor uint64, match string, count int64) *redis.ScanCmd
 	HGet(key, field string) *redis.StringCmd
 	MGet(keys ...string) *redis.SliceCmd
-	HSet(key, field string, value interface{}) *redis.BoolCmd
 	Expire(key string, expiration time.Duration) *redis.BoolCmd
+	HSet(key, field string, value interface{}) *redis.BoolCmd
 }
 
 func newRedisClient(option *option.RedisOption) (result RedisClient) {

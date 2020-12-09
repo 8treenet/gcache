@@ -9,8 +9,8 @@ const (
 	LevelDisable = 0 //禁止
 	LevelModel   = 1 //只缓存模型
 	LevelSearch  = 2 //查询缓存
-	MinExpires   = 30
 	MaxExpires   = 43200
+	MinExpires   = 30
 )
 
 var (
