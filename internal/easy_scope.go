@@ -80,6 +80,7 @@ func (es *easyScope) QueryScope() *easyScope {
 	es.condition.SQLKey = es.combinedConditionSql()
 	es.condition.SQLKey = strings.ToLower(es.condition.SQLKey)
 	es.condition.SQLKey = strings.ReplaceAll(es.condition.SQLKey, "`deleted_at` is null", "")
+	extractColExp := regexp.MustCompile("`([\\w\\d_]+)`\\.`([\\w\\d_]+)`")
 	for _, field := range es.Fields() {
 		if field.IsPrimaryKey {
 			continue
@@ -89,11 +90,15 @@ func (es *easyScope) QueryScope() *easyScope {
 		if strings.ToLower(column) == "deleted_at" {
 			continue
 		}
-		if !strings.Contains(es.condition.SQLKey, column) {
-			continue
-		}
 
-		es.condition.ObjectField = append(es.condition.ObjectField, column)
+		// 使用正则完全匹配列名
+		if groups := extractColExp.FindAllStringSubmatch(es.condition.SQLKey, -1); len(groups) > 0 {
+			for _, group := range groups {
+				if colName := group[2]; strings.ToLower(colName) == strings.ToLower(column) {
+					es.condition.ObjectField = append(es.condition.ObjectField, column)
+				}
+			}
+		}
 	}
 	es.buildJoinsCondition()
 
