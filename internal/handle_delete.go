@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func newDeleteHandle(handle *Handle) *deleteHandle {

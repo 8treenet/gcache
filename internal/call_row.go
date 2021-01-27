@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	_ "github.com/8treenet/gcache/driver"
-	"github.com/8treenet/gcache/option"
-	"github.com/jinzhu/gorm"
+	_ "github.com/TIZX/gcache/driver"
+	"github.com/TIZX/gcache/option"
+	"gorm.io/gorm"
 )
 
 const (

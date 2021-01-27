@@ -2,13 +2,14 @@ package internal
 
 import (
 	"encoding/json"
-	"github.com/8treenet/gcache/option"
-	"github.com/go-redis/redis"
 	"testing"
 	"time"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/TIZX/gcache/option"
+	"github.com/go-redis/redis"
+
+	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 )
 
 type TestEmail struct {
@@ -54,7 +55,7 @@ func gettestcachePlugin() *plugin {
 
 	opt := option.DefaultOption{}
 	//缓存插件 注入到Gorm。开启Debug，查看日志
-	cachePlugin := InjectGorm(db, &opt, &option.RedisOption{Addr:"localhost:6379"})
+	cachePlugin := InjectGorm(db, &opt, &option.RedisOption{Addr: "localhost:6379"})
 	return cachePlugin
 }
 
@@ -66,7 +67,7 @@ func TestLuaSetAffect(t *testing.T) {
 	end
 	return true
 `)
-	t.Log(script.Run(c.handle.redisClient, []string{"www"}, time.Now().Unix() - 100).Result())
+	t.Log(script.Run(c.handle.redisClient, []string{"www"}, time.Now().Unix()-100).Result())
 }
 
 func TestLuaAffectRefresh(t *testing.T) {
@@ -87,9 +88,8 @@ func TestLuaAffectRefresh(t *testing.T) {
 	return true
 `)
 	//redis.log(redis.LOG_NOTICE, key, v)
-	t.Log(script.Run(c.handle.redisClient, []string{"www"}, time.Now().Unix() - 50).Result())
+	t.Log(script.Run(c.handle.redisClient, []string{"www"}, time.Now().Unix()-50).Result())
 }
-
 
 func TestLuaSetSearch(t *testing.T) {
 	c := gettestcachePlugin()
@@ -124,5 +124,5 @@ func TestLuaSearchRefresh(t *testing.T) {
 	return true
 `)
 	//redis.log(redis.LOG_NOTICE, key, v)
-	t.Log(script.Run(c.handle.redisClient, []string{"com"}, time.Now().Unix() - 150).Result())
+	t.Log(script.Run(c.handle.redisClient, []string{"com"}, time.Now().Unix()-150).Result())
 }

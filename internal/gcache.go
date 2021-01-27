@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/8treenet/gcache/option"
-	"github.com/jinzhu/gorm"
+	"github.com/TIZX/gcache/option"
+	"gorm.io/gorm"
 )
 
 type plugin struct {

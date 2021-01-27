@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/jinzhu/gorm"
+import "gorm.io/gorm"
 
 func newUpdateHandle(handle *Handle) *updateHandle {
 	return &updateHandle{handle: handle}
