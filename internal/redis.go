@@ -3,7 +3,7 @@ package internal
 import (
 	"time"
 
-	"github.com/8treenet/gcache/option"
+	"github.com/TIZX/gcache/option"
 	"github.com/go-redis/redis"
 )
 

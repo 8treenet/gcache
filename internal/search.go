@@ -1,6 +1,6 @@
 package internal
 
-import "github.com/jinzhu/gorm"
+import "gorm.io/gorm"
 
 type search struct {
 	db               *gorm.DB
